@@ -13,15 +13,20 @@ const S = window.S = {
   tab: 'today',
   zSub: 'input',
   showJ: false,
-  showF: false,
   showR: false,
-  showM: false,
   showCal: false,
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
   colMob: true,
   colCor: true,
   colStr: true,
+  colMT: false,
+  colPU: false,
+  colWalk: false,
+  colFood: true,
+  colMirror: true,
+  colRef: false,
+  colNotes: false,
   oLog: null
 }
 
@@ -248,20 +253,41 @@ function parseSets(str) {
   }, 0)
 }
 
-// Walk checkbox helper
+// Collapsible section header helper
+function colHdr(label, stateKey, badge) {
+  var collapsed = S[stateKey]
+  var h = '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.' + stateKey + '=!S.' + stateKey + ';render()">'
+  h += '<div class="sh" style="margin-bottom:0">' + label + '</div>'
+  h += '<div style="display:flex;align-items:center;gap:8px">'
+  if (badge) h += badge
+  h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (collapsed ? '\u25B8' : '\u25BE') + '</span>'
+  h += '</div></div>'
+  return h
+}
+
+// Walk checkbox section (collapsible card)
 function walkChk(td) {
   var wd = td.walk && td.walk.done
-  var h = '<div class="chk" style="padding:11px 12px;background:' + (wd?'rgba(120,201,142,0.06)':'rgba(120,201,142,0.02)') + ';border:1px solid ' + (wd?'rgba(120,201,142,0.25)':'rgba(120,201,142,0.07)') + ';border-radius:6px;margin-top:10px" onclick="tg(\'walk\',\'done\');render()">'
-  h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
-  h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.45)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">target: 8,000 steps</span></div>'
+  var badge = wd ? '<span style="font-size:9px;font-weight:600;color:#78C98E;font-family:\'Space Grotesk\',sans-serif">\u2713</span>' : ''
+  var h = '<div class="card">' + colHdr('8K STEPS', 'colWalk', badge)
+  if (!S.colWalk) {
+    h += '<div style="margin-top:10px">'
+    h += '<div class="chk" style="padding:11px 12px;background:' + (wd?'rgba(120,201,142,0.06)':'rgba(120,201,142,0.02)') + ';border:1px solid ' + (wd?'rgba(120,201,142,0.25)':'rgba(120,201,142,0.07)') + ';border-radius:6px" onclick="event.stopPropagation();tg(\'walk\',\'done\');render()">'
+    h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.45)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">target: 8,000 steps</span></div>'
+    h += '</div></div>'
+  }
   h += '</div>'
   return h
 }
 
-// Pull-ups section helper
+// Pull-ups section (collapsible card)
 function pullupsSec(td) {
-  var h = '<div class="card" style="margin-bottom:8px"><div class="sh">PULL-UPS (GREASING THE GROOVE)</div>'
-  h += '<div class="iw"><input type="number" step="1" min="0" value="' + (td.pullups||'') + '" placeholder="0" onchange="uf(\'pullups\',this.value)" style="font-size:15px;padding:8px 10px"><span class="iu">total reps</span></div>'
+  var badge = td.pullups ? '<span style="font-size:9px;font-weight:600;color:#BE9B50;font-family:\'Space Grotesk\',sans-serif">' + td.pullups + ' reps</span>' : ''
+  var h = '<div class="card">' + colHdr('PULL-UPS (GREASING THE GROOVE)', 'colPU', badge)
+  if (!S.colPU) {
+    h += '<div style="margin-top:8px"><div class="iw"><input type="number" step="1" min="0" value="' + (td.pullups||'') + '" placeholder="0" onchange="uf(\'pullups\',this.value)"><span class="iu">total reps</span></div></div>'
+  }
   h += '</div>'
   return h
 }
@@ -393,15 +419,10 @@ window.render = function render() {
     h += '</div></div>'
     h += '</div>'
 
-    // MOBILITY (collapsible)
+    // MOBILITY — collapsible (default collapsed)
     if (!sn) {
-      h += '<div class="card">'
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colMob=!S.colMob;render()">'
-      h += '<div class="sh" style="margin-bottom:0">MOBILITY</div>'
-      h += '<div style="display:flex;align-items:center;gap:8px">'
-      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + mc + '/' + MOB.length + '</span>'
-      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colMob ? '\u25B8' : '\u25BE') + '</span>'
-      h += '</div></div>'
+      var mobBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + mc + '/' + MOB.length + '</span>'
+      h += '<div class="card">' + colHdr('MOBILITY', 'colMob', mobBadge)
       if (!S.colMob) {
         h += '<div style="margin-top:10px">'
         var lc = ''
@@ -417,41 +438,39 @@ window.render = function render() {
       h += '</div>'
     }
 
-    // MUAY THAI + CORE (MWF)
+    // MUAY THAI (MWF) — collapsible card
     if (mw) {
-      h += '<div class="card">'
       var mt = td.muayThai
-      h += '<div class="chk" style="padding:11px 12px;background:' + (mt?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (mt?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px;margin-bottom:12px" onclick="uf(\'muayThai\',' + (!mt) + ');render()">'
-      h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
-      h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">12\u20131 PM</span></div>'
+      var mtBadge = mt ? '<span style="font-size:9px;font-weight:600;color:#BE9B50;font-family:\'Space Grotesk\',sans-serif">\u2713</span>' : ''
+      h += '<div class="card">' + colHdr('\u{1F94A} MUAY THAI', 'colMT', mtBadge)
+      if (!S.colMT) {
+        h += '<div style="margin-top:10px">'
+        h += '<div class="chk" style="padding:11px 12px;background:' + (mt?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (mt?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px" onclick="event.stopPropagation();uf(\'muayThai\',' + (!mt) + ');render()">'
+        h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
+        h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">12\u20131 PM</span></div>'
+        h += '</div></div>'
+      }
       h += '</div>'
-      // Core — collapsible
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colCor=!S.colCor;render()">'
-      h += '<div class="sh" style="margin-bottom:0">CORE</div>'
-      h += '<div style="display:flex;align-items:center;gap:8px">'
-      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + cc + '/' + COR.length + '</span>'
-      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colCor ? '\u25B8' : '\u25BE') + '</span>'
-      h += '</div></div>'
+
+      // CORE (MWF) — collapsible card
+      var coreBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + cc + '/' + COR.length + '</span>'
+      h += '<div class="card">' + colHdr('CORE', 'colCor', coreBadge)
       if (!S.colCor) {
         h += '<div style="margin-top:6px">'
         COR.forEach(function(e) { h += chk('core', e[0], e[1], e[2]) })
         h += '</div>'
       }
       h += '</div>'
-      // Pull-ups + walk after core card
+
+      // Pull-ups + walk after core
       h += pullupsSec(td)
-      h += '<div class="card">' + walkChk(td) + '</div>'
+      h += walkChk(td)
     }
 
     // STRENGTH (TTS) — collapsible
     if (tt) {
-      h += '<div class="card">'
-      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colStr=!S.colStr;render()">'
-      h += '<div class="sh" style="margin-bottom:0">STRENGTH</div>'
-      h += '<div style="display:flex;align-items:center;gap:8px">'
-      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + sc + '/' + STR.length + '</span>'
-      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colStr ? '\u25B8' : '\u25BE') + '</span>'
-      h += '</div></div>'
+      var strBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + sc + '/' + STR.length + '</span>'
+      h += '<div class="card">' + colHdr('STRENGTH', 'colStr', strBadge)
       if (!S.colStr) {
         h += '<div style="margin-top:6px">'
         STR.forEach(function(e) {
@@ -476,9 +495,9 @@ window.render = function render() {
         h += '</div>'
       }
       h += '</div>'
-      // Pull-ups + walk after strength card
+      // Pull-ups + walk after strength
       h += pullupsSec(td)
-      h += '<div class="card">' + walkChk(td) + '</div>'
+      h += walkChk(td)
     }
 
     // REST DAY (Sunday)
@@ -492,20 +511,22 @@ window.render = function render() {
       h += '</div>'
     }
 
-    // FOOD (toggleable)
-    h += '<div class="card"><div style="display:flex;justify-content:space-between;cursor:pointer" onclick="S.showF=!S.showF;render()"><div class="sh">FOOD</div><span style="font-size:8px;color:rgba(255,255,255,0.15);font-family:\'Space Grotesk\',sans-serif">' + (S.showF?'HIDE':'SHOW') + '</span></div>'
-    if (S.showF) {
+    // FOOD — collapsible (default collapsed)
+    h += '<div class="card">' + colHdr('FOOD', 'colFood', '')
+    if (!S.colFood) {
+      h += '<div style="margin-top:8px">'
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
       ;(td.foodPics || []).forEach(function(img) { h += '<img src="' + img + '" style="width:65px;height:65px;object-fit:cover;border-radius:6px">' })
       h += '<div onclick="document.getElementById(\'fup\').click()" style="width:65px;height:65px;border-radius:6px;border:1px dashed rgba(190,155,80,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:20px;color:rgba(190,155,80,0.4)">+</span></div>'
       h += '<input id="fup" type="file" accept="image/*" style="display:none" onchange="hImg(this,\'f\')"></div>'
       h += '<textarea placeholder="Meal notes..." onchange="uf(\'foodNotes\',this.value)">' + (td.foodNotes||'') + '</textarea>'
+      h += '</div>'
     }
     h += '</div>'
 
-    // MIRROR PIC (toggleable — hidden by default)
-    h += '<div class="card"><div style="display:flex;justify-content:space-between;cursor:pointer" onclick="S.showM=!S.showM;render()"><div class="sh">MIRROR PIC</div><span style="font-size:8px;color:rgba(255,255,255,0.15);font-family:\'Space Grotesk\',sans-serif">' + (S.showM?'HIDE':'SHOW') + '</span></div>'
-    if (S.showM) {
+    // MIRROR PIC — collapsible (default collapsed)
+    h += '<div class="card">' + colHdr('MIRROR PIC', 'colMirror', '')
+    if (!S.colMirror) {
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'
       ;(td.mirrorPics || []).forEach(function(img) {
         h += '<div style="position:relative;width:100%"><img src="' + img + '" style="width:100%;max-height:320px;object-fit:contain;border-radius:6px;display:block"></div>'
@@ -516,10 +537,16 @@ window.render = function render() {
     }
     h += '</div>'
 
-    // REFLECTION
-    h += '<div class="card"><div style="display:flex;justify-content:space-between"><div class="sh">REFLECTION</div><button onclick="S.showR=!S.showR;render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.1);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 7px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">' + (S.showR?'HIDE':'ALL') + '</button></div>'
-    h += '<label class="lb">GRATITUDE</label><input type="text" value="' + (td.gratitude||'') + '" placeholder="One thing..." onchange="uf(\'gratitude\',this.value)" style="margin-bottom:8px">'
-    h += '<label class="lb">TIME</label><textarea placeholder="Outside training?" onchange="uf(\'timeSpent\',this.value)">' + (td.timeSpent||'') + '</textarea></div>'
+    // REFLECTION — collapsible (default expanded)
+    var refAllBtn = '<button onclick="event.stopPropagation();S.showR=!S.showR;render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.1);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 7px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">' + (S.showR?'HIDE':'ALL') + '</button>'
+    h += '<div class="card">' + colHdr('REFLECTION', 'colRef', refAllBtn)
+    if (!S.colRef) {
+      h += '<div style="margin-top:8px">'
+      h += '<label class="lb">GRATITUDE</label><input type="text" value="' + (td.gratitude||'') + '" placeholder="One thing..." onchange="uf(\'gratitude\',this.value)" style="margin-bottom:8px">'
+      h += '<label class="lb">TIME</label><textarea placeholder="Outside training?" onchange="uf(\'timeSpent\',this.value)">' + (td.timeSpent||'') + '</textarea>'
+      h += '</div>'
+    }
+    h += '</div>'
     if (S.showR) {
       h += '<div class="card"><div class="sh">ALL REFLECTIONS</div>'
       Object.entries(S.data.days).filter(function(e) { return e[1].gratitude || e[1].timeSpent }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
@@ -532,9 +559,13 @@ window.render = function render() {
       h += '</div>'
     }
 
-    // NOTES / JOURNAL
-    h += '<div class="card"><div style="display:flex;justify-content:space-between"><div class="sh">NOTES</div><button onclick="S.showJ=!S.showJ;render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.1);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 7px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">' + (S.showJ?'HIDE':'JOURNAL') + '</button></div>'
-    h += '<textarea placeholder="How did today feel?" rows="3" style="min-height:50px" onchange="uf(\'notes\',this.value)">' + (td.notes||'') + '</textarea></div>'
+    // NOTES — collapsible (default expanded)
+    var notesJrnBtn = '<button onclick="event.stopPropagation();S.showJ=!S.showJ;render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.1);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 7px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">' + (S.showJ?'HIDE':'JOURNAL') + '</button>'
+    h += '<div class="card">' + colHdr('NOTES', 'colNotes', notesJrnBtn)
+    if (!S.colNotes) {
+      h += '<div style="margin-top:8px"><textarea placeholder="How did today feel?" rows="3" style="min-height:50px" onchange="uf(\'notes\',this.value)">' + (td.notes||'') + '</textarea></div>'
+    }
+    h += '</div>'
     if (S.showJ) {
       h += '<div class="card"><div class="sh">JOURNAL</div>'
       Object.entries(S.data.days).filter(function(e) { return e[1].notes && e[1].notes.trim() }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
