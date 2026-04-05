@@ -312,7 +312,7 @@ window.render = function render() {
   else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#A97BDB' }
   else         { bannerText = 'Mobility \u2192 Strength';          bannerColor = '#60A5FA' }
   h += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;padding:5px 10px;text-align:center;margin-bottom:8px">'
-  h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
+  h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
   h += '</div>'
 
   // Tab bar
