@@ -20,13 +20,13 @@ const S = window.S = {
   colMob: true,
   colCor: true,
   colStr: true,
-  colMT: false,
-  colPU: false,
-  colWalk: false,
+  colMT: true,
+  colPU: true,
+  colWalk: true,
   colFood: true,
   colMirror: true,
-  colRef: false,
-  colNotes: false,
+  colRef: true,
+  colNotes: true,
   oLog: null
 }
 
@@ -312,14 +312,14 @@ window.render = function render() {
 
   // Logo + completion badge
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-  h += '<div style="display:flex;align-items:center;gap:8px">' + BAT + '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:700;letter-spacing:2.5px;color:#BE9B50">PHASE 1</span>' + BAT + '</div>'
+  h += '<div style="display:flex;align-items:center;gap:6px">' + BAT + BAT + BAT + '</div>'
   h += '<div style="background:' + (tp===100?'rgba(190,155,80,0.12)':'rgba(255,255,255,0.04)') + ';border:1px solid ' + (tp===100?'rgba(190,155,80,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (tp===100?'#BE9B50':'rgba(255,255,255,0.45)') + '">' + tp + '%</span></div>'
   h += '</div>'
 
   // Quote
   h += '<div style="padding:8px 12px;background:rgba(190,155,80,0.03);border:1px solid rgba(190,155,80,0.06);border-radius:6px;margin-bottom:10px">'
-  h += '<p style="font-size:10px;color:rgba(190,155,80,0.55);font-style:italic;line-height:1.5">' + AQ + '</p>'
-  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(190,155,80,0.3);margin-top:3px;letter-spacing:1px">\u2014 MUHAMMAD ALI</p>'
+  h += '<p style="font-size:12.5px;color:rgba(190,155,80,0.55);font-style:italic;line-height:1.5;text-align:center">' + AQ + '</p>'
+  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(190,155,80,0.3);margin-top:3px;letter-spacing:1px;text-align:center">\u2014 MUHAMMAD ALI</p>'
   h += '</div>'
 
   // Date navigation — clicking the date text opens calendar popup
@@ -338,7 +338,7 @@ window.render = function render() {
   else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#A97BDB' }
   else         { bannerText = 'Mobility \u2192 Strength';          bannerColor = '#60A5FA' }
   h += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;padding:5px 10px;text-align:center;margin-bottom:8px">'
-  h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
+  h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:17.5px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
   h += '</div>'
 
   // Tab bar
