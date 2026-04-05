@@ -15,15 +15,20 @@ const S = window.S = {
   showJ: false,
   showF: false,
   showR: false,
+  showM: false,
+  showCal: false,
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  colMob: true,
+  colCor: true,
+  colStr: true,
   oLog: null
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 var DY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-// Change 1: updated quote
 var AQ = '\u201CThe fight is won or lost far away from witnesses \u2014 behind the lines, in the gym, and long before I dance under those lights.\u201D'
 
-// Change 4: hip flexor march added after ATG split squat in HIPS (H) category
 var MOB = [
   ['at','ATG Treadmill','3m back+2m fwd','A'],
   ['sc','SL calf raises','x12','A'],
@@ -46,7 +51,6 @@ var MOB = [
   ['ds','Deep squat','2min','I'],
   ['dh','Dead hang','2min','I']
 ]
-// MOB.length = 20 → MWF total = 20+8+1+1 = 30, TTS total = 20+6+1 = 27
 
 var COR = [
   ['xb','XBody KB swing','2x1min/side'],
@@ -70,7 +74,6 @@ var ZZ = ['Waist','Chest','Hips','L Thigh','R Thigh','L Arm','R Arm','L Calf','R
 var CI = {A:'\u{1F9B6}',H:'\u{1F9B5}',D:'\u{1F30D}',R:'\u{1F300}',P:'\u{1F519}',T:'\u{1F4AA}',I:'\u2696\uFE0F'}
 var CNA = {A:'ANKLES',H:'HIPS',D:'DYNAMIC',R:'ROTATION',P:'POSTERIOR',T:'THORACIC',I:'INTEGRATION'}
 
-// Change 2: mood + energy emoji arrays
 var MOOD_E = ['\u{1F624}','\u{1F610}','\u{1F642}','\u{1F60A}','\u{1F525}']
 var ENRG_E = ['\u{1FAAB}','\u{1F636}','\u{1F642}','\u26A1','\u{1F525}']
 
@@ -98,7 +101,6 @@ window.tg = function(sec, id) {
   sv()
 }
 
-// Change 3: per-set strength logging helper
 window.setSW = function(id, si, field, val) {
   var k = dk(S.cur)
   if (!S.data.days[k]) S.data.days[k] = {}
@@ -163,30 +165,47 @@ async function ld() {
 }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
-// Change 5: steps >= 8000 counts as +1 item (MWF=30, TTS=27)
+// Weighted scoring:
+// MWF: Muay Thai 35% (binary), Core 30% (8 ex), Mobility 20% (20 ex), Walk 15% (binary)
+// TTS: Strength 65% (6 ex), Mobility 20% (20 ex), Walk 15% (binary)
+// Sunday: restDay logged = 100%
 function cp(k) {
   if (!S.data.days[k]) return 0
   var d = S.data.days[k]
   var dt = new Date(k + 'T12:00:00')
   var w = dt.getDay()
   if (w === 0) return d.restDay ? 100 : 0
-  var total = MOB.length + 1  // +1 for steps
-  var done = 0
+
+  var score = 0
+
+  // Mobility: 20% split across 20 exercises
   var m = d.mobility || {}
-  for (var x in m) if (m[x]) done++
+  var mobDone = 0
+  for (var x in m) if (m[x]) mobDone++
+  score += (mobDone / MOB.length) * 20
+
+  // Walk: 15% binary
+  var walkDone = (d.walk && d.walk.done) ? 1 : 0
+  score += walkDone * 15
+
   if (w === 1 || w === 3 || w === 5) {
-    total += COR.length + 1   // +COR + muay thai
+    // Muay Thai: 35% binary
+    if (d.muayThai) score += 35
+    // Core: 30% split across 8 exercises
     var c = d.core || {}
-    for (var x in c) if (c[x]) done++
-    if (d.muayThai) done++
+    var coreDone = 0
+    for (var x in c) if (c[x]) coreDone++
+    score += (coreDone / COR.length) * 30
   }
   if (w === 2 || w === 4 || w === 6) {
-    total += STR.length
+    // Strength: 65% split across 6 exercises
     var s = d.strength || {}
-    for (var x in s) if (s[x]) done++
+    var strDone = 0
+    for (var x in s) if (s[x]) strDone++
+    score += (strDone / STR.length) * 65
   }
-  if (d.steps && parseInt(d.steps) >= 8000) done++
-  return total > 0 ? Math.round(done / total * 100) : 0
+
+  return Math.round(score)
 }
 
 function gs() {
@@ -222,12 +241,29 @@ function chk(sec, id, nm, dt, extra) {
   var dn = (gt()[sec] || {})[id]
   return '<div class="chk' + (dn ? ' dn' : '') + '" onclick="tg(\'' + sec + '\',\'' + id + '\');render()"><div class="cb' + (dn ? ' dn' : '') + '">' + (dn ? '<span style="color:#17171c;font-size:10px;font-weight:700">\u2713</span>' : '') + '</div><div style="flex:1"><span style="font-size:13px;color:' + (dn ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.8)') + ';text-decoration:' + (dn ? 'line-through' : 'none') + '">' + nm + '</span><span style="display:block;font-size:10px;color:rgba(255,255,255,0.15)">' + dt + '</span></div>' + (extra || '') + '</div>'
 }
-// Change 3: parse number of sets from prescription string e.g. "3x15-20" → 3, "2x10+1x4-6" → 3
 function parseSets(str) {
   return str.split('+').reduce(function(s, p) {
     var m = p.match(/^(\d+)x/)
     return s + (m ? parseInt(m[1]) : 1)
   }, 0)
+}
+
+// Walk checkbox helper
+function walkChk(td) {
+  var wd = td.walk && td.walk.done
+  var h = '<div class="chk" style="padding:11px 12px;background:' + (wd?'rgba(120,201,142,0.06)':'rgba(120,201,142,0.02)') + ';border:1px solid ' + (wd?'rgba(120,201,142,0.25)':'rgba(120,201,142,0.07)') + ';border-radius:6px;margin-top:10px" onclick="tg(\'walk\',\'done\');render()">'
+  h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
+  h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.45)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">target: 8,000 steps</span></div>'
+  h += '</div>'
+  return h
+}
+
+// Pull-ups section helper
+function pullupsSec(td) {
+  var h = '<div class="card" style="margin-bottom:8px"><div class="sh">PULL-UPS (GREASING THE GROOVE)</div>'
+  h += '<div class="iw"><input type="number" step="1" min="0" value="' + (td.pullups||'') + '" placeholder="0" onchange="uf(\'pullups\',this.value)" style="font-size:15px;padding:8px 10px"><span class="iu">total reps</span></div>'
+  h += '</div>'
+  return h
 }
 
 // ─── Main render ──────────────────────────────────────────────────────────────
@@ -260,16 +296,17 @@ window.render = function render() {
   h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(190,155,80,0.3);margin-top:3px;letter-spacing:1px">\u2014 MUHAMMAD ALI</p>'
   h += '</div>'
 
-  // Date navigation
+  // Date navigation — clicking the date text opens calendar popup
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
-  h += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
+  h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.02)">'
+  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
   if (wk >= 1 && wk <= 14) h += '<span style="font-size:8px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
   h += '</div>'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
   h += '</div>'
 
-  // Change 6: Day type banner — no calories, 11px, full names, colors
+  // Day type banner
   var bannerText, bannerColor
   if (sn)      { bannerText = 'Rest Day';                          bannerColor = 'rgba(255,255,255,0.2)' }
   else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#A97BDB' }
@@ -286,6 +323,45 @@ window.render = function render() {
   })
   h += '</div></div>'
 
+  // ── Calendar popup (fixed overlay) ──────────────────────────────────────────
+  if (S.showCal) {
+    var cY = S.calYear, cM = S.calMonth
+    var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    var WDAYS = ['Su','Mo','Tu','We','Th','Fr','Sa']
+    var firstDay = new Date(cY, cM, 1).getDay()
+    var daysInMonth = new Date(cY, cM + 1, 0).getDate()
+    var todayKey = dk(new Date())
+    var curKey = dk(S.cur)
+
+    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center" onclick="S.showCal=false;render()">'
+    h += '<div style="background:#1e1e27;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;width:88%;max-width:320px" onclick="event.stopPropagation()">'
+    // Cal header
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    h += '<button onclick="if(S.calMonth===0){S.calMonth=11;S.calYear--}else{S.calMonth--};render()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u2039</button>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85)">' + MONTHS[cM] + ' ' + cY + '</span>'
+    h += '<button onclick="if(S.calMonth===11){S.calMonth=0;S.calYear++}else{S.calMonth++};render()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u203A</button>'
+    h += '</div>'
+    // Day headers
+    h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">'
+    WDAYS.forEach(function(d) { h += '<div style="text-align:center;font-size:9px;color:rgba(255,255,255,0.2);padding:3px 0;font-family:\'Space Grotesk\',sans-serif;letter-spacing:0.5px">' + d + '</div>' })
+    h += '</div>'
+    // Day cells
+    h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">'
+    for (var i = 0; i < firstDay; i++) h += '<div></div>'
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dDate = new Date(cY, cM, d)
+      var dKey = dk(dDate)
+      var isCur = dKey === curKey
+      var isToday = dKey === todayKey
+      var hasDot = S.data.days[dKey] && Object.keys(S.data.days[dKey]).length > 0
+      h += '<div onclick="S.cur=new Date(' + cY + ',' + cM + ',' + d + ');S.showCal=false;render()" style="text-align:center;padding:7px 2px;border-radius:7px;cursor:pointer;background:' + (isCur?'rgba(190,155,80,0.18)':'transparent') + ';border:1px solid ' + (isCur?'rgba(190,155,80,0.4)':isToday?'rgba(255,255,255,0.12)':'transparent') + '">'
+      h += '<span style="font-size:13px;font-weight:' + (isCur?'700':'400') + ';color:' + (isCur?'#BE9B50':isToday?'rgba(255,255,255,0.85)':'rgba(255,255,255,0.4)') + '">' + d + '</span>'
+      if (hasDot) h += '<div style="width:3px;height:3px;background:rgba(190,155,80,0.6);border-radius:50%;margin:2px auto 0"></div>'
+      h += '</div>'
+    }
+    h += '</div></div></div>'
+  }
+
   h += '<div style="padding:8px 16px 120px">'
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -293,43 +369,51 @@ window.render = function render() {
   // ══════════════════════════════════════════════════════════════════════════
   if (S.tab === 'today') {
 
-    // DAILY LOG — Change 2: pull-ups, mood, energy
+    // DAILY LOG
     h += '<div class="card"><div class="sh">DAILY LOG</div>'
     h += '<div class="g2">' + inp('weight','WEIGHT','170','lbs') + inp('calories','CAL',mw?'2200':tt?'2100':'1800','cal') + '</div>'
     h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g') + inp('steps','STEPS','8000','') + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100') + inp('sleepScore','SLEEP','0-100','/100') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm') + inp('hrv','HRV','50','ms') + '</div>'
-    // Pull-ups
-    h += '<div style="margin-top:6px"><label class="lb">PULL-UPS</label><div class="iw"><input type="number" step="1" min="0" value="' + (td.pullups||'') + '" placeholder="0" onchange="uf(\'pullups\',this.value)"><span class="iu">reps</span></div></div>'
-    // Mood selector
+    // Mood selector — tapping selected emoji deselects it
     h += '<div style="margin-top:10px"><label class="lb">MOOD</label><div style="display:flex;gap:14px;padding:4px 2px">'
     MOOD_E.forEach(function(e, i) {
       var sel = td.mood === i
       var unset = td.mood === undefined || td.mood === null
-      h += '<span onclick="uf(\'mood\',' + i + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
+      h += '<span onclick="uf(\'mood\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
     })
     h += '</div></div>'
-    // Energy selector
+    // Energy selector — tapping selected emoji deselects it
     h += '<div style="margin-top:6px;margin-bottom:2px"><label class="lb">ENERGY</label><div style="display:flex;gap:14px;padding:4px 2px">'
     ENRG_E.forEach(function(e, i) {
       var sel = td.energy === i
       var unset = td.energy === undefined || td.energy === null
-      h += '<span onclick="uf(\'energy\',' + i + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
+      h += '<span onclick="uf(\'energy\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
     })
     h += '</div></div>'
     h += '</div>'
 
-    // MOBILITY
+    // MOBILITY (collapsible)
     if (!sn) {
-      h += '<div class="card"><div style="display:flex;justify-content:space-between"><div class="sh">MOBILITY</div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + mc + '/' + MOB.length + '</span></div>'
-      var lc = ''
-      MOB.forEach(function(e) {
-        if (e[3] !== lc) {
-          lc = e[3]
-          h += '<div style="display:flex;align-items:center;gap:5px;padding:6px 0 2px"><span style="font-size:12px">' + CI[lc] + '</span><span class="cn">' + CNA[lc] + '</span></div>'
-        }
-        h += chk('mobility', e[0], e[1], e[2])
-      })
+      h += '<div class="card">'
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colMob=!S.colMob;render()">'
+      h += '<div class="sh" style="margin-bottom:0">MOBILITY</div>'
+      h += '<div style="display:flex;align-items:center;gap:8px">'
+      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + mc + '/' + MOB.length + '</span>'
+      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colMob ? '\u25B8' : '\u25BE') + '</span>'
+      h += '</div></div>'
+      if (!S.colMob) {
+        h += '<div style="margin-top:10px">'
+        var lc = ''
+        MOB.forEach(function(e) {
+          if (e[3] !== lc) {
+            lc = e[3]
+            h += '<div style="display:flex;align-items:center;gap:5px;padding:6px 0 2px"><span style="font-size:12px">' + CI[lc] + '</span><span class="cn">' + CNA[lc] + '</span></div>'
+          }
+          h += chk('mobility', e[0], e[1], e[2])
+        })
+        h += '</div>'
+      }
       h += '</div>'
     }
 
@@ -341,36 +425,60 @@ window.render = function render() {
       h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
       h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">12\u20131 PM</span></div>'
       h += '</div>'
-      h += '<div style="display:flex;justify-content:space-between"><div class="sh">CORE</div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + cc + '/' + COR.length + '</span></div>'
-      COR.forEach(function(e) { h += chk('core', e[0], e[1], e[2]) })
+      // Core — collapsible
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colCor=!S.colCor;render()">'
+      h += '<div class="sh" style="margin-bottom:0">CORE</div>'
+      h += '<div style="display:flex;align-items:center;gap:8px">'
+      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + cc + '/' + COR.length + '</span>'
+      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colCor ? '\u25B8' : '\u25BE') + '</span>'
+      h += '</div></div>'
+      if (!S.colCor) {
+        h += '<div style="margin-top:6px">'
+        COR.forEach(function(e) { h += chk('core', e[0], e[1], e[2]) })
+        h += '</div>'
+      }
       h += '</div>'
+      // Pull-ups + walk after core card
+      h += pullupsSec(td)
+      h += '<div class="card">' + walkChk(td) + '</div>'
     }
 
-    // Change 3: STRENGTH with per-set logging (TTS)
+    // STRENGTH (TTS) — collapsible
     if (tt) {
-      h += '<div class="card"><div style="display:flex;justify-content:space-between"><div class="sh">STRENGTH</div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + sc + '/' + STR.length + '</span></div>'
-      STR.forEach(function(e) {
-        var numSets = parseSets(e[2])
-        var sets = JSON.parse(JSON.stringify((td.strengthSets || {})[e[0]] || []))
-        while (sets.length < numSets) sets.push({ w: '', r: '' })
-
-        h += chk('strength', e[0], e[1], e[2] + ' \u00B7 ' + e[3],
-          '<button onclick="event.stopPropagation();S.oLog=S.oLog===\'' + e[0] + '\'?null:\'' + e[0] + '\';render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.12);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 6px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">LOG</button>')
-
-        if (S.oLog === e[0]) {
-          h += '<div style="padding:8px 10px;background:rgba(255,255,255,0.01);border-top:1px solid rgba(255,255,255,0.03);margin-bottom:3px">'
-          for (var si = 0; si < numSets; si++) {
-            h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
-            h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.2);width:32px;flex-shrink:0">SET ' + (si+1) + '</span>'
-            h += '<div style="flex:1"><input type="text" value="' + (sets[si].w||'') + '" placeholder="' + e[3] + '" onchange="setSW(\'' + e[0] + '\',' + si + ',\'w\',this.value)"></div>'
-            h += '<div style="flex:1"><input type="text" value="' + (sets[si].r||'') + '" placeholder="reps" onchange="setSW(\'' + e[0] + '\',' + si + ',\'r\',this.value)"></div>'
+      h += '<div class="card">'
+      h += '<div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="S.colStr=!S.colStr;render()">'
+      h += '<div class="sh" style="margin-bottom:0">STRENGTH</div>'
+      h += '<div style="display:flex;align-items:center;gap:8px">'
+      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(255,255,255,0.15)') + '">' + sc + '/' + STR.length + '</span>'
+      h += '<span style="font-size:11px;color:rgba(255,255,255,0.25)">' + (S.colStr ? '\u25B8' : '\u25BE') + '</span>'
+      h += '</div></div>'
+      if (!S.colStr) {
+        h += '<div style="margin-top:6px">'
+        STR.forEach(function(e) {
+          var numSets = parseSets(e[2])
+          var sets = JSON.parse(JSON.stringify((td.strengthSets || {})[e[0]] || []))
+          while (sets.length < numSets) sets.push({ w: '', r: '' })
+          h += chk('strength', e[0], e[1], e[2] + ' \u00B7 ' + e[3],
+            '<button onclick="event.stopPropagation();S.oLog=S.oLog===\'' + e[0] + '\'?null:\'' + e[0] + '\';render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.12);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 6px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">LOG</button>')
+          if (S.oLog === e[0]) {
+            h += '<div style="padding:8px 10px;background:rgba(255,255,255,0.01);border-top:1px solid rgba(255,255,255,0.03);margin-bottom:3px">'
+            for (var si = 0; si < numSets; si++) {
+              h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
+              h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.2);width:32px;flex-shrink:0">SET ' + (si+1) + '</span>'
+              h += '<div style="flex:1"><input type="text" value="' + (sets[si].w||'') + '" placeholder="' + e[3] + '" onchange="setSW(\'' + e[0] + '\',' + si + ',\'w\',this.value)"></div>'
+              h += '<div style="flex:1"><input type="text" value="' + (sets[si].r||'') + '" placeholder="reps" onchange="setSW(\'' + e[0] + '\',' + si + ',\'r\',this.value)"></div>'
+              h += '</div>'
+            }
+            h += '<p style="font-size:9px;color:rgba(255,255,255,0.12);margin-top:3px;font-style:italic">' + e[4] + '</p>'
             h += '</div>'
           }
-          h += '<p style="font-size:9px;color:rgba(255,255,255,0.12);margin-top:3px;font-style:italic">' + e[4] + '</p>'
-          h += '</div>'
-        }
-      })
+        })
+        h += '</div>'
+      }
       h += '</div>'
+      // Pull-ups + walk after strength card
+      h += pullupsSec(td)
+      h += '<div class="card">' + walkChk(td) + '</div>'
     }
 
     // REST DAY (Sunday)
@@ -384,7 +492,7 @@ window.render = function render() {
       h += '</div>'
     }
 
-    // FOOD
+    // FOOD (toggleable)
     h += '<div class="card"><div style="display:flex;justify-content:space-between;cursor:pointer" onclick="S.showF=!S.showF;render()"><div class="sh">FOOD</div><span style="font-size:8px;color:rgba(255,255,255,0.15);font-family:\'Space Grotesk\',sans-serif">' + (S.showF?'HIDE':'SHOW') + '</span></div>'
     if (S.showF) {
       h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">'
@@ -395,19 +503,22 @@ window.render = function render() {
     }
     h += '</div>'
 
-    // Change 7: MIRROR PIC — separate card below food
-    h += '<div class="card"><div class="sh">MIRROR PIC</div>'
-    h += '<div style="display:flex;flex-wrap:wrap;gap:6px">'
-    ;(td.mirrorPics || []).forEach(function(img, i) {
-      h += '<div style="position:relative;width:100%"><img src="' + img + '" style="width:100%;max-height:320px;object-fit:contain;border-radius:6px;display:block"></div>'
-    })
-    h += '<div onclick="document.getElementById(\'mup\').click()" style="width:65px;height:65px;border-radius:6px;border:1px dashed rgba(123,63,160,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:20px;color:rgba(123,63,160,0.5)">+</span></div>'
-    h += '<input id="mup" type="file" accept="image/*" style="display:none" onchange="hImg(this,\'m\')">'
-    h += '</div></div>'
+    // MIRROR PIC (toggleable — hidden by default)
+    h += '<div class="card"><div style="display:flex;justify-content:space-between;cursor:pointer" onclick="S.showM=!S.showM;render()"><div class="sh">MIRROR PIC</div><span style="font-size:8px;color:rgba(255,255,255,0.15);font-family:\'Space Grotesk\',sans-serif">' + (S.showM?'HIDE':'SHOW') + '</span></div>'
+    if (S.showM) {
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'
+      ;(td.mirrorPics || []).forEach(function(img) {
+        h += '<div style="position:relative;width:100%"><img src="' + img + '" style="width:100%;max-height:320px;object-fit:contain;border-radius:6px;display:block"></div>'
+      })
+      h += '<div onclick="document.getElementById(\'mup\').click()" style="width:65px;height:65px;border-radius:6px;border:1px dashed rgba(123,63,160,0.3);display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="font-size:20px;color:rgba(123,63,160,0.5)">+</span></div>'
+      h += '<input id="mup" type="file" accept="image/*" style="display:none" onchange="hImg(this,\'m\')">'
+      h += '</div>'
+    }
+    h += '</div>'
 
     // REFLECTION
     h += '<div class="card"><div style="display:flex;justify-content:space-between"><div class="sh">REFLECTION</div><button onclick="S.showR=!S.showR;render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.1);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 7px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">' + (S.showR?'HIDE':'ALL') + '</button></div>'
-    h += '<label class="lb">GRATITUDE</label><input type="text" value="' + (td.gratitude||'') + '" placeholder="One thing..." onchange="uf(\'gratitude\',this.value)" style="margin-bottom:8px;font-size:12px">'
+    h += '<label class="lb">GRATITUDE</label><input type="text" value="' + (td.gratitude||'') + '" placeholder="One thing..." onchange="uf(\'gratitude\',this.value)" style="margin-bottom:8px">'
     h += '<label class="lb">TIME</label><textarea placeholder="Outside training?" onchange="uf(\'timeSpent\',this.value)">' + (td.timeSpent||'') + '</textarea></div>'
     if (S.showR) {
       h += '<div class="card"><div class="sh">ALL REFLECTIONS</div>'
