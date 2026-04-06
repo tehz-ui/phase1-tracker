@@ -325,8 +325,8 @@ window.render = function render() {
   // Quote — alternates by day of month (even = Ali, odd = Aristotle)
   var aq = S.cur.getDate() % 2 === 0 ? AQ_ALI : AQ_ARI
   h += '<div style="padding:8px 12px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2);border-radius:6px;margin-bottom:10px">'
-  h += '<p style="font-size:12px;color:#ffffff;font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
-  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.5);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
+  h += '<p style="font-size:12px;color:rgba(255,255,255,0.45);font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
+  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.3);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
   h += '</div>'
 
   // Date navigation — clicking the date text opens calendar popup
