@@ -15,6 +15,9 @@ const S = window.S = {
   showJ: false,
   showR: false,
   showCal: false,
+  showExpert: false,
+  expertLoading: false,
+  expertResponse: '',
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
   colMob: true,
@@ -298,6 +301,127 @@ function pullupsSec(td) {
   return h
 }
 
+// ─── Expert consultation ──────────────────────────────────────────────────────
+var EXPERT_SYSTEM = "You are a combined sports physical therapist, sports scientist, and elite-level strength and conditioning coach. You are reviewing weekly training data for your client with the following profile:\nStarting point: 170lbs, 5'8-5'9, 27% body fat, largely sedentary, returning to training after time off. Current VO2 max: 46 (up from 37-38 last year via Whoop). Has chronic left ankle instability from repeated sprains with restricted dorsiflexion. Suspected hip rotational asymmetry. Lower body significantly weaker than upper body — RDLs shake at 20lbs while pressing 44lbs for reps. Has prior Muay Thai training from Thailand.\nGoals: Recomp to 15-17% body fat. Compete in amateur Muay Thai fight at 150lbs by late 2026. Reach 90th percentile in strength, mobility, and conditioning. Touch a basketball rim. Run a 25 minute 5K.\nCurrent program: Phase 1 sprint — 6 days per week. MWF: 35min daily mobility (20 exercises targeting ankles, hips, thoracic rotation), Muay Thai class 12-1pm, 8 core exercises post-class. TTS: same mobility, 6 KB strength exercises (swings 44lb, goblet squat 35lb, press 35/44lb, rows 44lb, staggered RDL 20lb, carries 44/35lb). Daily: 8K step target, pull-ups greasing the groove.\nCalorie targets: MWF 2200cal, TTS 2100cal, Sunday 1800cal. Protein 140g+ daily. Eating at roughly 500 calorie deficit for recomp.\nWhen analyzing the data, provide: 1) Adherence assessment — are they hitting the targets that matter most. 2) Weight and body composition trajectory — is the recomp working based on weight trend. 3) Recovery analysis — what do the Whoop scores (recovery, HRV, RHR, strain) tell you about adaptation vs overreaching. 4) Strength progression recommendations — specific weight and rep targets for the coming week for each exercise. 5) Mobility progress assessment if any hold times or notes indicate change. 6) One specific thing to improve this week. 7) One thing they're doing well. Be direct, specific, and concise. No generic advice — use the actual numbers in front of you."
+
+function formatExpertData() {
+  var lines = []
+  var today = new Date()
+  var moodLabels = ['Irritable','Neutral','OK','Happy','On fire']
+  var energyLabels = ['Drained','Low','OK','High','Explosive']
+
+  lines.push('=== TRAINING LOG — LAST 14 DAYS ===\n')
+  for (var i = 13; i >= 0; i--) {
+    var d = new Date(today); d.setDate(d.getDate() - i)
+    var k = dk(d)
+    var day = S.data.days[k]
+    if (!day || Object.keys(day).length === 0) continue
+    var dw = d.getDay()
+    var dtype = dw===0 ? 'Sunday/Rest' : (dw===1||dw===3||dw===5) ? 'MWF' : 'TTS'
+    lines.push('--- ' + k + ' (' + DY[dw] + ', ' + dtype + ') ---')
+    if (day.weight)  lines.push('Weight: ' + day.weight + ' lbs')
+    if (day.calories || day.protein || day.steps) {
+      var nut = []
+      if (day.calories) nut.push('Calories: ' + day.calories)
+      if (day.protein)  nut.push('Protein: ' + day.protein + 'g')
+      if (day.steps)    nut.push('Steps: ' + day.steps)
+      lines.push(nut.join(' | '))
+    }
+    var whoop = []
+    if (day.whoopRecovery) whoop.push('Recovery ' + day.whoopRecovery + '%')
+    if (day.hrv)           whoop.push('HRV ' + day.hrv + 'ms')
+    if (day.rhr)           whoop.push('RHR ' + day.rhr + 'bpm')
+    if (day.whoopStrain)   whoop.push('Strain ' + day.whoopStrain + '/21')
+    if (day.sleepScore)    whoop.push('Sleep ' + day.sleepScore + '/100')
+    if (whoop.length) lines.push('WHOOP: ' + whoop.join(', '))
+    if (day.mobility) {
+      var mc = Object.values(day.mobility).filter(Boolean).length
+      lines.push('Mobility: ' + mc + '/' + MOB.length + ' completed')
+    }
+    if (dw===1||dw===3||dw===5) {
+      lines.push('Muay Thai: ' + (day.muayThai ? 'YES' : 'NO'))
+      if (day.core) {
+        var cc = Object.values(day.core).filter(Boolean).length
+        lines.push('Core: ' + cc + '/' + COR.length + ' completed')
+      }
+    }
+    if (dw===2||dw===4||dw===6) {
+      if (day.strength) {
+        var sc2 = Object.values(day.strength).filter(Boolean).length
+        lines.push('Strength: ' + sc2 + '/' + STR.length + ' completed')
+      }
+      if (day.strengthSets) {
+        STR.forEach(function(e) {
+          var sets = day.strengthSets[e[0]]
+          if (sets && sets.length) {
+            var setStr = sets.filter(function(s){return s.w||s.r}).map(function(s,i){
+              return 'Set'+(i+1)+': '+(s.w||'?')+'lb x '+(s.r||'?')+'reps'
+            }).join(', ')
+            if (setStr) lines.push('  ' + e[1] + ': ' + setStr)
+          }
+        })
+      }
+    }
+    if (day.walk && day.walk.done) lines.push('8K Steps: YES')
+    if (day.pullups) lines.push('Pull-ups total reps: ' + day.pullups)
+    if (day.mood !== null && day.mood !== undefined) lines.push('Mood: ' + moodLabels[day.mood])
+    if (day.energy !== null && day.energy !== undefined) lines.push('Energy: ' + energyLabels[day.energy])
+    if (day.notes) lines.push('Notes: "' + day.notes + '"')
+    if (day.restDay) lines.push('Rest day logged.')
+    lines.push('')
+  }
+
+  var zKeys = Object.keys(S.data.zozo).sort()
+  if (zKeys.length) {
+    lines.push('=== BODY MEASUREMENTS (ZOZO SCANS) ===')
+    zKeys.forEach(function(kz) {
+      var scan = S.data.zozo[kz]
+      var meas = ZZ.map(function(m) {
+        var v = scan[m.toLowerCase().replace(/ /g,'_')]
+        return v ? m+': '+v+'"' : null
+      }).filter(Boolean)
+      if (meas.length) lines.push(kz + ': ' + meas.join(', '))
+    })
+  }
+
+  return lines.join('\n')
+}
+
+window.consultExpert = async function() {
+  S.expertLoading = true
+  S.showExpert = true
+  S.expertResponse = ''
+  render()
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: EXPERT_SYSTEM,
+        messages: [{ role: 'user', content: 'Here is my training data for the last 14 days. Please analyze it and provide your expert assessment:\n\n' + formatExpertData() }]
+      })
+    })
+    if (!resp.ok) {
+      var errText = await resp.text()
+      S.expertResponse = 'API error ' + resp.status + ':\n' + errText
+    } else {
+      var data = await resp.json()
+      S.expertResponse = data.content[0].text
+    }
+  } catch(e) {
+    S.expertResponse = 'Error: ' + e.message
+  }
+  S.expertLoading = false
+  render()
+}
+
 // ─── Main render ──────────────────────────────────────────────────────────────
 window.render = function render() {
   var ky = dk(S.cur), dw = S.cur.getDay()
@@ -393,6 +517,25 @@ window.render = function render() {
       h += '</div>'
     }
     h += '</div></div></div>'
+  }
+
+  // ── Expert modal (fixed overlay) ────────────────────────────────────────────
+  if (S.showExpert) {
+    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;padding:16px" onclick="S.showExpert=false;render()">'
+    h += '<div style="flex:1;overflow-y:auto;background:#1a1a22;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px;display:flex;flex-direction:column" onclick="event.stopPropagation()">'
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-shrink:0">'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:700;color:#BE9B50;letter-spacing:2px">EXPERT ASSESSMENT</span>'
+    h += '<button onclick="S.showExpert=false;render()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;font-family:\'Space Grotesk\',sans-serif;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.5px">\u2715 CLOSE</button>'
+    h += '</div>'
+    if (S.expertLoading) {
+      h += '<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">'
+      h += '<div style="width:32px;height:32px;border:2px solid rgba(190,155,80,0.2);border-top-color:#BE9B50;border-radius:50%;animation:spin 0.8s linear infinite"></div>'
+      h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:1px">CONSULTING EXPERT...</p>'
+      h += '</div>'
+    } else {
+      h += '<div style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.75;white-space:pre-wrap;overflow-y:auto">' + (S.expertResponse || '') + '</div>'
+    }
+    h += '</div></div>'
   }
 
   h += '<div style="padding:8px 16px 120px">'
@@ -631,6 +774,9 @@ window.render = function render() {
   // ══════════════════════════════════════════════════════════════════════════
   if (S.tab === 'progress') {
     var stk = gs(), ad = ga(), wt = gw()
+
+    // Consult Expert button
+    h += '<button onclick="consultExpert()" style="width:100%;padding:13px;background:linear-gradient(135deg,rgba(190,155,80,0.1),rgba(190,155,80,0.06));border:1px solid rgba(190,155,80,0.25);border-radius:8px;color:#BE9B50;font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:12px">\u{1F9E0} CONSULT EXPERT</button>'
 
     h += '<div style="display:flex;gap:8px;margin-bottom:10px">'
     h += '<div style="flex:1;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:8px;padding:16px 12px;text-align:center"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:#BE9B50;line-height:1">' + stk + '</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.2);letter-spacing:2px;margin-top:6px">STREAK</p></div>'
