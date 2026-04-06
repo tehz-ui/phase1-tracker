@@ -324,17 +324,17 @@ window.render = function render() {
 
   // Quote — alternates by day of month (even = Ali, odd = Aristotle)
   var aq = S.cur.getDate() % 2 === 0 ? AQ_ALI : AQ_ARI
-  h += '<div style="padding:8px 12px;background:rgba(96,165,250,0.05);border:1px solid rgba(96,165,250,0.12);border-radius:6px;margin-bottom:10px">'
-  h += '<p style="font-size:12px;color:rgba(96,165,250,0.85);font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
-  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(96,165,250,0.4);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
+  h += '<div style="padding:8px 12px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2);border-radius:6px;margin-bottom:10px">'
+  h += '<p style="font-size:12px;color:#ffffff;font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
+  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.5);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
   h += '</div>'
 
   // Date navigation — clicking the date text opens calendar popup
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
   h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.02)">'
-  h += '<span style="font-size:14px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:11px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
-  if (wk >= 1 && wk <= 14) h += '<span style="font-size:9px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
+  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
+  if (wk >= 1 && wk <= 14) h += '<span style="font-size:8px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
   h += '</div>'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
   h += '</div>'
