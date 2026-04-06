@@ -32,7 +32,8 @@ const S = window.S = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 var DY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-var AQ = '\u201CThe fight is won or lost far away from witnesses \u2014 behind the lines, in the gym, and long before I dance under those lights.\u201D'
+var AQ_ALI = { t: '\u201CThe fight is won or lost far away from witnesses \u2014 behind the lines, in the gym, and long before I dance under those lights.\u201D', a: '\u2014 MUHAMMAD ALI' }
+var AQ_ARI = { t: '\u201CWe are what we repeatedly do. Excellence, then, is not an act, but a habit.\u201D', a: '\u2014 ARISTOTLE' }
 
 var MOB = [
   ['at','ATG Treadmill','3m back+2m fwd','A'],
@@ -82,8 +83,13 @@ var CNA = {A:'ANKLES',H:'HIPS',D:'DYNAMIC',R:'ROTATION',P:'POSTERIOR',T:'THORACI
 var MOOD_E = ['\u{1F624}','\u{1F610}','\u{1F642}','\u{1F60A}','\u{1F525}']
 var ENRG_E = ['\u{1FAAB}','\u{1F636}','\u{1F642}','\u26A1','\u{1F525}']
 
-var BAT = '<svg width="22" height="13" viewBox="0 0 100 60" fill="none"><path d="M50 0C45 12 35 20 20 22C14 22 8 19 0 12C3 24 10 36 22 42C30 46 38 46 44 42C47 40 49 35 50 30C51 35 53 40 56 42C62 46 70 46 78 42C90 36 97 24 100 12C92 19 86 22 80 22C65 20 55 12 50 0Z" fill="#7B3FA0"/><path d="M50 5C46 14 38 20 26 22C22 22 16 20 10 16C12 24 18 32 28 37C34 40 40 40 45 37C48 35 49 31 50 27C51 31 52 35 55 37C60 40 66 40 72 37C82 32 88 24 90 16C84 20 78 22 74 22C62 20 54 14 50 5Z" fill="#5C2D82"/></svg>'
-var BATL = '<svg width="40" height="24" viewBox="0 0 100 60" fill="none"><path d="M50 0C45 12 35 20 20 22C14 22 8 19 0 12C3 24 10 36 22 42C30 46 38 46 44 42C47 40 49 35 50 30C51 35 53 40 56 42C62 46 70 46 78 42C90 36 97 24 100 12C92 19 86 22 80 22C65 20 55 12 50 0Z" fill="#7B3FA0"/><path d="M50 5C46 14 38 20 26 22C22 22 16 20 10 16C12 24 18 32 28 37C34 40 40 40 45 37C48 35 49 31 50 27C51 31 52 35 55 37C60 40 66 40 72 37C82 32 88 24 90 16C84 20 78 22 74 22C62 20 54 14 50 5Z" fill="#5C2D82"/></svg>'
+// Batman-style bat paths (wider wingspan, pointed ears, angular)
+var _BATP = 'M50 9 L40 0 L36 10 L26 18 L2 42 L16 36 L22 50 L36 44 L50 52 L64 44 L78 50 L84 36 L98 42 L74 18 L64 10 L60 0 Z'
+var _BATI = 'M50 15 L42 7 L39 15 L31 22 L10 41 L22 37 L27 48 L38 43 L50 49 L62 43 L73 48 L78 37 L90 41 L69 22 L61 15 L58 7 Z'
+var BAT   = '<svg width="22" height="13" viewBox="0 0 100 55" fill="none"><path d="' + _BATP + '" fill="#7B3FA0"/><path d="' + _BATI + '" fill="#5C2D82"/></svg>'
+var BAT_G = '<svg width="22" height="13" viewBox="0 0 100 55" fill="none"><path d="' + _BATP + '" fill="#39FF14"/><path d="' + _BATI + '" fill="#1EB00E"/></svg>'
+var BATL  = '<svg width="40" height="24" viewBox="0 0 100 55" fill="none"><path d="' + _BATP + '" fill="#7B3FA0"/><path d="' + _BATI + '" fill="#5C2D82"/></svg>'
+var BATL_G= '<svg width="40" height="24" viewBox="0 0 100 55" fill="none"><path d="' + _BATP + '" fill="#39FF14"/><path d="' + _BATI + '" fill="#1EB00E"/></svg>'
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 function dk(d) { return d.toISOString().split('T')[0] }
@@ -240,7 +246,7 @@ function gw() {
 
 // ─── Render helpers ───────────────────────────────────────────────────────────
 function inp(f, la, p, u) {
-  return '<div><label class="lb">' + la + '</label><div class="iw"><input type="number" step="0.1" value="' + (gt()[f] || '') + '" placeholder="' + p + '" onchange="uf(\'' + f + '\',this.value)">' + (u ? '<span class="iu">' + u + '</span>' : '') + '</div></div>'
+  return '<div><label class="lb">' + la + '</label><div class="iw"><input type="number" step="0.1" value="' + (gt()[f] || '') + '" placeholder="" onchange="uf(\'' + f + '\',this.value)">' + (u ? '<span class="iu">' + u + '</span>' : '') + '</div></div>'
 }
 function chk(sec, id, nm, dt, extra) {
   var dn = (gt()[sec] || {})[id]
@@ -312,22 +318,23 @@ window.render = function render() {
 
   // Logo + completion badge
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
-  h += '<div style="display:flex;align-items:center;gap:6px">' + BAT + BAT + BAT + '</div>'
+  h += '<div style="display:flex;align-items:center;gap:6px">' + BAT + BAT_G + BAT + '</div>'
   h += '<div style="background:' + (tp===100?'rgba(190,155,80,0.12)':'rgba(255,255,255,0.04)') + ';border:1px solid ' + (tp===100?'rgba(190,155,80,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (tp===100?'#BE9B50':'rgba(255,255,255,0.45)') + '">' + tp + '%</span></div>'
   h += '</div>'
 
-  // Quote
-  h += '<div style="padding:8px 12px;background:rgba(190,155,80,0.03);border:1px solid rgba(190,155,80,0.06);border-radius:6px;margin-bottom:10px">'
-  h += '<p style="font-size:12.5px;color:rgba(190,155,80,0.55);font-style:italic;line-height:1.5;text-align:center">' + AQ + '</p>'
-  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(190,155,80,0.3);margin-top:3px;letter-spacing:1px;text-align:center">\u2014 MUHAMMAD ALI</p>'
+  // Quote — alternates by day of month (even = Ali, odd = Aristotle)
+  var aq = S.cur.getDate() % 2 === 0 ? AQ_ALI : AQ_ARI
+  h += '<div style="padding:8px 12px;background:rgba(96,165,250,0.05);border:1px solid rgba(96,165,250,0.12);border-radius:6px;margin-bottom:10px">'
+  h += '<p style="font-size:12px;color:rgba(96,165,250,0.85);font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
+  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(96,165,250,0.4);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
   h += '</div>'
 
   // Date navigation — clicking the date text opens calendar popup
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
   h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.02)">'
-  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
-  if (wk >= 1 && wk <= 14) h += '<span style="font-size:8px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
+  h += '<span style="font-size:14px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:11px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
+  if (wk >= 1 && wk <= 14) h += '<span style="font-size:9px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
   h += '</div>'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
   h += '</div>'
@@ -335,7 +342,7 @@ window.render = function render() {
   // Day type banner
   var bannerText, bannerColor
   if (sn)      { bannerText = 'Rest Day';                          bannerColor = 'rgba(255,255,255,0.2)' }
-  else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#A97BDB' }
+  else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#60A5FA' }
   else         { bannerText = 'Mobility \u2192 Strength';          bannerColor = '#60A5FA' }
   h += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;padding:5px 10px;text-align:center;margin-bottom:8px">'
   h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:17.5px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
@@ -462,9 +469,9 @@ window.render = function render() {
       }
       h += '</div>'
 
-      // Pull-ups + walk after core
-      h += pullupsSec(td)
+      // Walk + pull-ups after core
       h += walkChk(td)
+      h += pullupsSec(td)
     }
 
     // STRENGTH (TTS) — collapsible
@@ -495,9 +502,9 @@ window.render = function render() {
         h += '</div>'
       }
       h += '</div>'
-      // Pull-ups + walk after strength
-      h += pullupsSec(td)
+      // Walk + pull-ups after strength
       h += walkChk(td)
+      h += pullupsSec(td)
     }
 
     // REST DAY (Sunday)
@@ -576,7 +583,7 @@ window.render = function render() {
     }
 
     // Footer
-    h += '<div style="text-align:center;padding:24px 16px 8px"><svg width="28" height="17" viewBox="0 0 100 60" fill="none"><path d="M50 0C45 12 35 20 20 22C14 22 8 19 0 12C3 24 10 36 22 42C30 46 38 46 44 42C47 40 49 35 50 30C51 35 53 40 56 42C62 46 70 46 78 42C90 36 97 24 100 12C92 19 86 22 80 22C65 20 55 12 50 0Z" fill="rgba(123,63,160,0.4)"/></svg><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.5);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:10px;color:rgba(255,255,255,0.12);margin-top:4px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
+    h += '<div style="text-align:center;padding:24px 16px 8px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.5);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:10px;color:rgba(255,255,255,0.12);margin-top:4px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -655,7 +662,7 @@ window.render = function render() {
       h += '</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:9px;color:rgba(255,255,255,0.15)">Start:' + wt[0].w + '</span><span style="font-size:9px;color:' + (wt[wt.length-1].w<wt[0].w?'#78C98E':'#D46461') + '">Now:' + wt[wt.length-1].w + ' (' + (wt[wt.length-1].w-wt[0].w>0?'+':'') + (wt[wt.length-1].w-wt[0].w).toFixed(1) + ')</span></div></div>'
     }
 
-    h += '<div style="text-align:center;padding:20px 16px"><svg width="28" height="17" viewBox="0 0 100 60" fill="none"><path d="M50 0C45 12 35 20 20 22C14 22 8 19 0 12C3 24 10 36 22 42C30 46 38 46 44 42C47 40 49 35 50 30C51 35 53 40 56 42C62 46 70 46 78 42C90 36 97 24 100 12C92 19 86 22 80 22C65 20 55 12 50 0Z" fill="rgba(123,63,160,0.4)"/></svg><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.5);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:9px;color:rgba(255,255,255,0.1);margin-top:3px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
+    h += '<div style="text-align:center;padding:20px 16px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.5);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:9px;color:rgba(255,255,255,0.1);margin-top:3px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
   }
 
   h += '</div>'
