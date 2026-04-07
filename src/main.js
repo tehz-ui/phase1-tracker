@@ -360,12 +360,19 @@ function gw() {
 }
 
 // ─── Render helpers ───────────────────────────────────────────────────────────
-function inp(f, la, p, u) {
-  return '<div><label class="lb">' + la + '</label><div class="iw"><input type="number" step="0.1" value="' + (gt()[f] || '') + '" placeholder="" onchange="uf(\'' + f + '\',this.value)">' + (u ? '<span class="iu">' + u + '</span>' : '') + '</div></div>'
+function inp(f, la, p, u, clr) {
+  var v = gt()[f] || ''
+  var cs = clr ? 'color:' + clr : ''
+  return '<div><label class="lb">' + la + '</label><div class="iw"><input type="number" step="0.1" value="' + v + '" placeholder="" style="' + cs + '" onchange="uf(\'' + f + '\',this.value);render()">' + (u ? '<span class="iu">' + u + '</span>' : '') + '</div></div>'
 }
+// Color helpers for Whoop-style ranges
+function whoopClr(v, gLo, yLo) { if (!v || v === '') return ''; v = +v; return v >= gLo ? '#4ADE80' : v >= yLo ? '#FBBF24' : '#EF4444' }
+function rhrClr(v) { if (!v || v === '') return ''; v = +v; return v < 60 ? '#4ADE80' : v <= 75 ? '#FBBF24' : '#EF4444' }
+function nutClr(v, gTh, yTh) { if (!v || v === '') return ''; v = +v; return v >= gTh ? '#4ADE80' : v >= yTh ? '#FBBF24' : '#EF4444' }
+function calClr(v, target) { if (!v || v === '') return ''; v = +v; return v <= target ? '#4ADE80' : v <= target + 200 ? '#FBBF24' : '#EF4444' }
 function chk(sec, id, nm, dt, extra) {
   var dn = (gt()[sec] || {})[id]
-  return '<div class="chk' + (dn ? ' dn' : '') + '" onclick="tg(\'' + sec + '\',\'' + id + '\');render()"><div class="cb' + (dn ? ' dn' : '') + '">' + (dn ? '<span style="color:#17171c;font-size:10px;font-weight:700">\u2713</span>' : '') + '</div><div style="flex:1"><span style="font-size:13px;color:' + (dn ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.8)') + ';text-decoration:' + (dn ? 'line-through' : 'none') + '">' + nm + '</span><span style="display:block;font-size:10px;color:rgba(255,255,255,0.15)">' + dt + '</span></div>' + (extra || '') + '</div>'
+  return '<div class="chk' + (dn ? ' dn' : '') + '" onclick="tg(\'' + sec + '\',\'' + id + '\');render()"><div class="cb' + (dn ? ' dn' : '') + '">' + (dn ? '<span style="color:#1e1e26;font-size:10px;font-weight:700">\u2713</span>' : '') + '</div><div style="flex:1"><span style="font-size:13px;color:' + (dn ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)') + ';text-decoration:' + (dn ? 'line-through' : 'none') + '">' + nm + '</span><span style="display:block;font-size:10px;color:rgba(255,255,255,0.2)">' + dt + '</span></div>' + (extra || '') + '</div>'
 }
 function parseSets(str) {
   return str.split('+').reduce(function(s, p) {
@@ -394,7 +401,7 @@ function walkChk(td) {
   if (!S.colWalk) {
     h += '<div style="margin-top:10px">'
     h += '<div class="chk" style="padding:11px 12px;background:' + (wd?'rgba(120,201,142,0.06)':'rgba(120,201,142,0.02)') + ';border:1px solid ' + (wd?'rgba(120,201,142,0.25)':'rgba(120,201,142,0.07)') + ';border-radius:6px" onclick="event.stopPropagation();tg(\'walk\',\'done\');render()">'
-    h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#1e1e26;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
     h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.45)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">target: 8,000 steps</span></div>'
     h += '</div></div>'
   }
@@ -553,7 +560,7 @@ window.render = function render() {
   var sc = 0; var sd = td.strength || {}; for (var x in sd) if (sd[x]) sc++
 
   // ── Header (sticky) ─────────────────────────────────────────────────────────
-  var h = '<div style="padding:12px 16px 0;position:sticky;top:0;background:#17171c;z-index:10;border-bottom:1px solid rgba(255,255,255,0.03)">'
+  var h = '<div style="padding:12px 16px 0;position:sticky;top:0;background:#1e1e26;z-index:10;border-bottom:1px solid rgba(255,255,255,0.04)">'
 
   // Logo + completion badge
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
@@ -574,7 +581,7 @@ window.render = function render() {
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
   h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.02)">'
-  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.8)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.2)">' + ky + '</span>'
+  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.3)">' + ky + '</span>'
   if (wk >= 1 && wk <= 14) h += '<span style="font-size:8px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
   h += '</div>'
   h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
@@ -650,7 +657,7 @@ window.render = function render() {
       h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:1px">CONSULTING EXPERT...</p>'
       h += '</div>'
     } else {
-      h += '<div style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.75;white-space:pre-wrap;overflow-y:auto">' + (S.expertResponse || '') + '</div>'
+      h += '<div style="font-size:13px;color:rgba(255,255,255,0.85);line-height:1.75;white-space:pre-wrap;overflow-y:auto">' + (S.expertResponse || '') + '</div>'
     }
     h += '</div></div>'
   }
@@ -684,10 +691,11 @@ window.render = function render() {
 
     // DAILY LOG
     h += '<div class="card"><div class="sh">DAILY LOG</div>'
-    h += '<div class="g2">' + inp('weight','WEIGHT','170','lbs') + inp('calories','CAL',mw?'2200':tt?'2100':'1800','cal') + '</div>'
-    h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g') + inp('steps','STEPS','8000','') + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
-    h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100') + inp('sleepScore','SLEEP','0-100','/100') + '</div>'
-    h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm') + inp('hrv','HRV','50','ms') + '</div>'
+    var _calTarget = mw ? 2200 : tt ? 2100 : 1800
+    h += '<div class="g2">' + inp('weight','WEIGHT','170','lbs') + inp('calories','CAL',_calTarget,'cal',calClr(td.calories,_calTarget)) + '</div>'
+    h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g',nutClr(td.protein,130,80)) + inp('steps','STEPS','8000','',nutClr(td.steps,8000,5000)) + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
+    h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100',whoopClr(td.whoopRecovery,67,34)) + inp('sleepScore','SLEEP','0-100','/100',whoopClr(td.sleepScore,67,34)) + '</div>'
+    h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm',rhrClr(td.rhr)) + inp('hrv','HRV','50','ms',whoopClr(td.hrv,67,34)) + '</div>'
     // Sync Whoop button
     h += '<button onclick="syncWhoop()" style="width:100%;margin-top:8px;padding:9px;background:rgba(57,255,20,0.04);border:1px solid rgba(57,255,20,0.15);border-radius:6px;color:rgba(57,255,20,0.6);font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer">' + (S.whoopSyncing ? '<span style="display:inline-block;width:10px;height:10px;border:1.5px solid rgba(57,255,20,0.15);border-top-color:rgba(57,255,20,0.6);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px"></span>SYNCING...' : '\u{1F4F2} SYNC WHOOP') + '</button>'
     // Mood selector — tapping selected emoji deselects it
@@ -710,13 +718,13 @@ window.render = function render() {
     var _cr = td.creatine
     h += '<div style="display:flex;gap:8px;margin-top:10px">'
     h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (_cr?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
-    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_cr?'<span style="color:#17171c;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_cr?'<span style="color:#1e1e26;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
     h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:0.8px">CREATINE</span></div>'
     // 7+ Hours Sleep checkbox
     var _sl = td.sleepOk
     var _slAuto = td.sleepHours && +td.sleepHours >= 7
     h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(96,165,250,0.06)':'rgba(96,165,250,0.02)') + ';border:1px solid ' + (_sl?'rgba(96,165,250,0.2)':'rgba(96,165,250,0.06)') + ';border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
-    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_sl?'#60A5FA':'rgba(96,165,250,0.2)') + ';background:' + (_sl?'#60A5FA':'transparent') + '">' + (_sl?'<span style="color:#17171c;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_sl?'#60A5FA':'rgba(96,165,250,0.2)') + ';background:' + (_sl?'#60A5FA':'transparent') + '">' + (_sl?'<span style="color:#1e1e26;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
     h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'#60A5FA':'rgba(96,165,250,0.5)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
     if (td.sleepHours) h += '<span style="font-size:8px;color:rgba(255,255,255,0.2);margin-left:4px">' + td.sleepHours + 'h</span>'
     h += '</div></div>'
@@ -749,7 +757,7 @@ window.render = function render() {
       if (!S.colMT) {
         h += '<div style="margin-top:10px">'
         h += '<div class="chk" style="padding:11px 12px;background:' + (mt?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (mt?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px" onclick="event.stopPropagation();uf(\'muayThai\',' + (!mt) + ');render()">'
-        h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#17171c;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
+        h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#1e1e26;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
         h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.15);margin-top:1px">12\u20131 PM</span></div>'
         h += '</div></div>'
       }
@@ -855,7 +863,7 @@ window.render = function render() {
       Object.entries(S.data.days).filter(function(e) { return e[1].gratitude || e[1].timeSpent }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
         var dt = new Date(e[0]+'T12:00:00')
         h += '<div style="padding:8px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);border-radius:6px;margin-bottom:5px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + '</span><span style="font-size:9px;color:rgba(255,255,255,0.15);margin-left:5px">' + e[0] + '</span>'
-        if (e[1].gratitude) h += '<p style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">' + e[1].gratitude + '</p>'
+        if (e[1].gratitude) h += '<p style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">' + e[1].gratitude + '</p>'
         if (e[1].timeSpent) h += '<p style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">' + e[1].timeSpent + '</p>'
         h += '</div>'
       })
@@ -873,7 +881,7 @@ window.render = function render() {
       h += '<div class="card"><div class="sh">JOURNAL</div>'
       Object.entries(S.data.days).filter(function(e) { return e[1].notes && e[1].notes.trim() }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
         var dt = new Date(e[0]+'T12:00:00'), p = cp(e[0])
-        h += '<div style="padding:8px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);border-radius:6px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + ' <span style="color:rgba(255,255,255,0.15)">' + e[0] + '</span></span><span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:' + (p>=80?'#78C98E':'rgba(255,255,255,0.15)') + '">' + p + '%</span></div><p style="font-size:12px;color:rgba(255,255,255,0.5);line-height:1.5;white-space:pre-wrap;margin-top:4px">' + e[1].notes + '</p></div>'
+        h += '<div style="padding:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + ' <span style="color:rgba(255,255,255,0.25)">' + e[0] + '</span></span><span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:' + (p>=80?'#78C98E':'rgba(255,255,255,0.25)') + '">' + p + '%</span></div><p style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.5;white-space:pre-wrap;margin-top:4px">' + e[1].notes + '</p></div>'
       })
       h += '</div>'
     }
@@ -949,7 +957,7 @@ window.render = function render() {
       ['Sleep', gl('sleepScore'), '/100'],
       ['Strain', gl('whoopStrain'), '/21']
     ].forEach(function(x) {
-      h += '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.02)"><span style="font-size:11px;color:rgba(255,255,255,0.25)">' + x[0] + '</span><span style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.65);font-family:\'Space Grotesk\',sans-serif">' + x[1] + (x[1]!=='\u2014'?' '+x[2]:'') + '</span></div>'
+      h += '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="font-size:11px;color:rgba(255,255,255,0.35)">' + x[0] + '</span><span style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.75);font-family:\'Space Grotesk\',sans-serif">' + x[1] + (x[1]!=='\u2014'?' '+x[2]:'') + '</span></div>'
     })
     h += '</div>'
 
