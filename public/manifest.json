@@ -4,8 +4,8 @@
   "description": "Phase 1 Fitness Tracker",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#F0F0F3",
-  "theme_color": "#F0F0F3",
+  "background_color": "#2a2a35",
+  "theme_color": "#2a2a35",
   "orientation": "portrait-primary",
   "icons": [
     {

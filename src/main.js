@@ -372,7 +372,7 @@ function nutClr(v, gTh, yTh) { if (!v || v === '') return ''; v = +v; return v >
 function calClr(v, target) { if (!v || v === '') return ''; v = +v; return v <= target ? '#4ADE80' : v <= target + 200 ? '#FBBF24' : '#EF4444' }
 function chk(sec, id, nm, dt, extra) {
   var dn = (gt()[sec] || {})[id]
-  return '<div class="chk' + (dn ? ' dn' : '') + '" onclick="tg(\'' + sec + '\',\'' + id + '\');render()"><div class="cb' + (dn ? ' dn' : '') + '">' + (dn ? '<span style="color:#fff;font-size:10px;font-weight:700">\u2713</span>' : '') + '</div><div style="flex:1"><span style="font-size:13px;color:' + (dn ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.9)') + ';text-decoration:' + (dn ? 'line-through' : 'none') + '">' + nm + '</span><span style="display:block;font-size:10px;color:rgba(0,0,0,0.2)">' + dt + '</span></div>' + (extra || '') + '</div>'
+  return '<div class="chk' + (dn ? ' dn' : '') + '" onclick="tg(\'' + sec + '\',\'' + id + '\');render()"><div class="cb' + (dn ? ' dn' : '') + '">' + (dn ? '<span style="color:#fff;font-size:10px;font-weight:700">\u2713</span>' : '') + '</div><div style="flex:1"><span style="font-size:13px;color:' + (dn ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.9)') + ';text-decoration:' + (dn ? 'line-through' : 'none') + '">' + nm + '</span><span style="display:block;font-size:10px;color:rgba(255,255,255,0.2)">' + dt + '</span></div>' + (extra || '') + '</div>'
 }
 function parseSets(str) {
   return str.split('+').reduce(function(s, p) {
@@ -388,7 +388,7 @@ function colHdr(label, stateKey, badge) {
   h += '<div class="sh" style="margin-bottom:0">' + label + '</div>'
   h += '<div style="display:flex;align-items:center;gap:8px">'
   if (badge) h += badge
-  h += '<span style="font-size:11px;color:rgba(0,0,0,0.3)">' + (collapsed ? '\u25B8' : '\u25BE') + '</span>'
+  h += '<span style="font-size:11px;color:rgba(255,255,255,0.3)">' + (collapsed ? '\u25B8' : '\u25BE') + '</span>'
   h += '</div></div>'
   return h
 }
@@ -402,7 +402,7 @@ function walkChk(td) {
     h += '<div style="margin-top:10px">'
     h += '<div class="chk" style="padding:11px 12px;background:' + (wd?'rgba(120,201,142,0.06)':'rgba(120,201,142,0.02)') + ';border:1px solid ' + (wd?'rgba(120,201,142,0.25)':'rgba(120,201,142,0.07)') + ';border-radius:6px" onclick="event.stopPropagation();tg(\'walk\',\'done\');render()">'
     h += '<div class="cb' + (wd?' dn':'') + '" style="width:17px;height:17px;border-radius:4px;border-color:' + (wd?'#78C98E':'rgba(120,201,142,0.2)') + ';background:' + (wd?'#78C98E':'transparent') + '">' + (wd?'<span style="color:#fff;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
-    h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.5)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(0,0,0,0.3);margin-top:1px">target: 8,000 steps</span></div>'
+    h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (wd?'#78C98E':'rgba(120,201,142,0.5)') + ';letter-spacing:1px">\u{1F6B6} 8K STEPS</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.3);margin-top:1px">target: 8,000 steps</span></div>'
     h += '</div></div>'
   }
   h += '</div>'
@@ -560,39 +560,39 @@ window.render = function render() {
   var sc = 0; var sd = td.strength || {}; for (var x in sd) if (sd[x]) sc++
 
   // ── Header (sticky) ─────────────────────────────────────────────────────────
-  var h = '<div style="padding:12px 16px 0;position:sticky;top:0;background:#F0F0F3;z-index:10;border-bottom:1px solid rgba(0,0,0,0.04)">'
+  var h = '<div style="padding:12px 16px 0;position:sticky;top:0;background:#2a2a35;z-index:10;border-bottom:1px solid rgba(255,255,255,0.04)">'
 
   // Logo + completion badge
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
   h += '<div style="display:flex;align-items:center;gap:6px">' + BAT + BAT_G + BAT + '</div>'
   var _tpGreen = tp >= 80
   var _goldStar = td.steps && +td.steps >= 8000
-  h += '<div style="background:' + (_tpGreen?'rgba(120,201,142,0.12)':'rgba(0,0,0,0.04)') + ';border:1px solid ' + (_tpGreen?'rgba(120,201,142,0.25)':'rgba(0,0,0,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (_tpGreen?'#78C98E':'rgba(0,0,0,0.45)') + '">' + tp + '%</span>' + (_goldStar ? '<span style="margin-left:4px;font-size:12px">\u2B50</span>' : '') + '</div>'
+  h += '<div style="background:' + (_tpGreen?'rgba(120,201,142,0.12)':'rgba(255,255,255,0.04)') + ';border:1px solid ' + (_tpGreen?'rgba(120,201,142,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (_tpGreen?'#78C98E':'rgba(255,255,255,0.45)') + '">' + tp + '%</span>' + (_goldStar ? '<span style="margin-left:4px;font-size:12px">\u2B50</span>' : '') + '</div>'
   h += '</div>'
 
   // Quote — alternates by day of month (even = Ali, odd = Aristotle)
   var aq = S.cur.getDate() % 2 === 0 ? AQ_ALI : AQ_ARI
   h += '<div style="padding:8px 12px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.2);border-radius:6px;margin-bottom:10px">'
-  h += '<p style="font-size:12px;color:rgba(0,0,0,0.55);font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
-  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(0,0,0,0.4);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
+  h += '<p style="font-size:12px;color:rgba(255,255,255,0.6);font-style:italic;line-height:1.5;text-align:center">' + aq.t + '</p>'
+  h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.4);margin-top:3px;letter-spacing:1px;text-align:center">' + aq.a + '</p>'
   h += '</div>'
 
   // Date navigation — clicking the date text opens calendar popup
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
-  h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(0,0,0,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
-  h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,0.02)">'
-  h += '<span style="font-size:13px;font-weight:500;color:rgba(0,0,0,0.9)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(0,0,0,0.3)">' + ky + '</span>'
+  h += '<button onclick="S.cur.setDate(S.cur.getDate()-1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u2039</button>'
+  h += '<div onclick="S.showCal=!S.showCal;if(S.showCal){S.calYear=S.cur.getFullYear();S.calMonth=S.cur.getMonth();}render()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,0.02)">'
+  h += '<span style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.9)">' + DY[dw] + '</span><span style="font-size:10px;color:rgba(255,255,255,0.3)">' + ky + '</span>'
   if (wk >= 1 && wk <= 14) h += '<span style="font-size:8px;font-weight:600;color:#BE9B50;background:rgba(190,155,80,0.1);padding:2px 5px;border-radius:3px;font-family:\'Space Grotesk\',sans-serif">W' + wk + '</span>'
   h += '</div>'
-  h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(0,0,0,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
+  h += '<button onclick="S.cur.setDate(S.cur.getDate()+1);render()" style="background:none;border:none;color:rgba(255,255,255,0.3);font-size:20px;cursor:pointer;padding:2px 12px">\u203A</button>'
   h += '</div>'
 
   // Day type banner
   var bannerText, bannerColor
-  if (sn)      { bannerText = 'Rest Day';                          bannerColor = 'rgba(0,0,0,0.35)' }
-  else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#60A5FA' }
-  else         { bannerText = 'Mobility \u2192 Strength';          bannerColor = '#60A5FA' }
-  h += '<div style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.04);border-radius:5px;padding:5px 10px;text-align:center;margin-bottom:8px">'
+  if (sn)      { bannerText = 'Rest Day';                          bannerColor = 'rgba(255,255,255,0.5)' }
+  else if (mw) { bannerText = 'Mobility \u2192 Muay Thai \u2192 Core'; bannerColor = '#4D8EFF' }
+  else         { bannerText = 'Mobility \u2192 Strength';          bannerColor = '#4D8EFF' }
+  h += '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;padding:5px 10px;text-align:center;margin-bottom:8px">'
   h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:17.5px;font-weight:500;letter-spacing:1.2px;color:' + bannerColor + '">' + bannerText + '</span>'
   h += '</div>'
 
@@ -614,17 +614,17 @@ window.render = function render() {
     var todayKey = dk(new Date())
     var curKey = dk(S.cur)
 
-    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center" onclick="S.showCal=false;render()">'
-    h += '<div style="background:#FFFFFF;border:1px solid rgba(0,0,0,0.1);border-radius:14px;padding:18px;width:88%;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.15)" onclick="event.stopPropagation()">'
+    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center" onclick="S.showCal=false;render()">'
+    h += '<div style="background:#363645;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px;width:88%;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
     // Cal header
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
-    h += '<button onclick="if(S.calMonth===0){S.calMonth=11;S.calYear--}else{S.calMonth--};render()" style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.07);border-radius:6px;color:rgba(0,0,0,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u2039</button>'
-    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:600;color:rgba(0,0,0,0.85)">' + MONTHS[cM] + ' ' + cY + '</span>'
-    h += '<button onclick="if(S.calMonth===11){S.calMonth=0;S.calYear++}else{S.calMonth++};render()" style="background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.07);border-radius:6px;color:rgba(0,0,0,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u203A</button>'
+    h += '<button onclick="if(S.calMonth===0){S.calMonth=11;S.calYear--}else{S.calMonth--};render()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u2039</button>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:14px;font-weight:600;color:rgba(255,255,255,0.85)">' + MONTHS[cM] + ' ' + cY + '</span>'
+    h += '<button onclick="if(S.calMonth===11){S.calMonth=0;S.calYear++}else{S.calMonth++};render()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u203A</button>'
     h += '</div>'
     // Day headers
     h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">'
-    WDAYS.forEach(function(d) { h += '<div style="text-align:center;font-size:9px;color:rgba(0,0,0,0.35);padding:3px 0;font-family:\'Space Grotesk\',sans-serif;letter-spacing:0.5px">' + d + '</div>' })
+    WDAYS.forEach(function(d) { h += '<div style="text-align:center;font-size:9px;color:rgba(255,255,255,0.35);padding:3px 0;font-family:\'Space Grotesk\',sans-serif;letter-spacing:0.5px">' + d + '</div>' })
     h += '</div>'
     // Day cells
     h += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">'
@@ -635,8 +635,8 @@ window.render = function render() {
       var isCur = dKey === curKey
       var isToday = dKey === todayKey
       var hasDot = S.data.days[dKey] && Object.keys(S.data.days[dKey]).length > 0
-      h += '<div onclick="S.cur=new Date(' + cY + ',' + cM + ',' + d + ');S.showCal=false;render()" style="text-align:center;padding:7px 2px;border-radius:7px;cursor:pointer;background:' + (isCur?'rgba(190,155,80,0.18)':'transparent') + ';border:1px solid ' + (isCur?'rgba(190,155,80,0.4)':isToday?'rgba(0,0,0,0.12)':'transparent') + '">'
-      h += '<span style="font-size:13px;font-weight:' + (isCur?'700':'400') + ';color:' + (isCur?'#BE9B50':isToday?'rgba(0,0,0,0.85)':'rgba(0,0,0,0.4)') + '">' + d + '</span>'
+      h += '<div onclick="S.cur=new Date(' + cY + ',' + cM + ',' + d + ');S.showCal=false;render()" style="text-align:center;padding:7px 2px;border-radius:7px;cursor:pointer;background:' + (isCur?'rgba(190,155,80,0.18)':'transparent') + ';border:1px solid ' + (isCur?'rgba(190,155,80,0.4)':isToday?'rgba(255,255,255,0.12)':'transparent') + '">'
+      h += '<span style="font-size:13px;font-weight:' + (isCur?'700':'400') + ';color:' + (isCur?'#BE9B50':isToday?'rgba(255,255,255,0.85)':'rgba(255,255,255,0.4)') + '">' + d + '</span>'
       if (hasDot) h += '<div style="width:3px;height:3px;background:rgba(190,155,80,0.6);border-radius:50%;margin:2px auto 0"></div>'
       h += '</div>'
     }
@@ -645,19 +645,19 @@ window.render = function render() {
 
   // ── Expert modal (fixed overlay) ────────────────────────────────────────────
   if (S.showExpert) {
-    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,0.4);display:flex;flex-direction:column;padding:16px" onclick="S.showExpert=false;render()">'
-    h += '<div style="flex:1;overflow-y:auto;background:#FFFFFF;border:1px solid rgba(0,0,0,0.1);border-radius:14px;padding:16px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.15)" onclick="event.stopPropagation()">'
+    h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;padding:16px" onclick="S.showExpert=false;render()">'
+    h += '<div style="flex:1;overflow-y:auto;background:#363645;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-shrink:0">'
     h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:700;color:#BE9B50;letter-spacing:2px">EXPERT ASSESSMENT</span>'
-    h += '<button onclick="S.showExpert=false;render()" style="background:rgba(0,0,0,0.06);border:1px solid rgba(0,0,0,0.1);border-radius:6px;color:rgba(0,0,0,0.5);font-size:11px;font-family:\'Space Grotesk\',sans-serif;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.5px">\u2715 CLOSE</button>'
+    h += '<button onclick="S.showExpert=false;render()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;font-family:\'Space Grotesk\',sans-serif;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.5px">\u2715 CLOSE</button>'
     h += '</div>'
     if (S.expertLoading) {
       h += '<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">'
       h += '<div style="width:32px;height:32px;border:2px solid rgba(190,155,80,0.2);border-top-color:#BE9B50;border-radius:50%;animation:spin 0.8s linear infinite"></div>'
-      h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;color:rgba(0,0,0,0.3);letter-spacing:1px">CONSULTING EXPERT...</p>'
+      h += '<p style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;color:rgba(255,255,255,0.3);letter-spacing:1px">CONSULTING EXPERT...</p>'
       h += '</div>'
     } else {
-      h += '<div style="font-size:13px;color:rgba(0,0,0,0.8);line-height:1.75;white-space:pre-wrap;overflow-y:auto">' + (S.expertResponse || '') + '</div>'
+      h += '<div style="font-size:13px;color:rgba(255,255,255,0.8);line-height:1.75;white-space:pre-wrap;overflow-y:auto">' + (S.expertResponse || '') + '</div>'
     }
     h += '</div></div>'
   }
@@ -676,45 +676,43 @@ window.render = function render() {
     h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g',nutClr(td.protein,130,80)) + inp('steps','STEPS','8000','',nutClr(td.steps,8000,5000)) + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100',whoopClr(td.whoopRecovery,67,34)) + inp('sleepScore','SLEEP','0-100','/100',whoopClr(td.sleepScore,67,34)) + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm',rhrClr(td.rhr)) + inp('hrv','HRV','50','ms',whoopClr(td.hrv,67,34)) + '</div>'
-    // Mood / Energy / Sync Whoop — same row height
-    h += '<div style="display:flex;gap:8px;margin-top:10px;align-items:stretch">'
-    // Mood
-    h += '<div style="flex:1"><label class="lb">MOOD</label><div style="display:flex;gap:8px;padding:4px 0">'
-    MOOD_E.forEach(function(e, i) {
-      var sel = td.mood === i
-      var unset = td.mood === undefined || td.mood === null
-      h += '<span onclick="uf(\'mood\',' + (sel ? 'null' : i) + ');render()" style="font-size:22px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
-    })
-    h += '</div></div>'
-    // Energy
-    h += '<div style="flex:1"><label class="lb">ENERGY</label><div style="display:flex;gap:8px;padding:4px 0">'
-    ENRG_E.forEach(function(e, i) {
-      var sel = td.energy === i
-      var unset = td.energy === undefined || td.energy === null
-      h += '<span onclick="uf(\'energy\',' + (sel ? 'null' : i) + ');render()" style="font-size:22px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
-    })
-    h += '</div></div>'
-    // Sync Whoop
-    h += '<div style="display:flex;flex-direction:column"><label class="lb">WHOOP</label>'
-    h += '<button onclick="syncWhoop()" style="flex:1;padding:4px 10px;background:rgba(123,63,160,0.08);border:1px solid rgba(123,63,160,0.2);border-radius:6px;color:#7B3FA0;font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap">' + (S.whoopSyncing ? '\u23F3' : '\u{1F4F2} SYNC') + '</button>'
-    h += '</div></div>'
-    // Creatine + 7+ Hours Sleep checkboxes
+    // Creatine + 7+ Hours Sleep checkboxes (blue style)
     var _cr = td.creatine
     var _sl = td.sleepOk
     h += '<div style="display:flex;gap:8px;margin-top:8px">'
-    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(190,155,80,0.08)':'rgba(190,155,80,0.03)') + ';border:1px solid ' + (_cr?'rgba(190,155,80,0.25)':'rgba(0,0,0,0.08)') + ';border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
-    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_cr?'<span style="color:#fff;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
-    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'#BE9B50':'rgba(26,26,46,0.4)') + ';letter-spacing:0.8px">CREATINE</span></div>'
-    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(190,155,80,0.08)':'rgba(190,155,80,0.03)') + ';border:1px solid ' + (_sl?'rgba(190,155,80,0.25)':'rgba(0,0,0,0.08)') + ';border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
-    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_sl?'<span style="color:#fff;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
-    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'#BE9B50':'rgba(26,26,46,0.4)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
-    if (td.sleepHours) h += '<span style="font-size:8px;color:rgba(26,26,46,0.3);margin-left:4px">' + td.sleepHours + 'h</span>'
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(96,165,250,0.08)':'rgba(96,165,250,0.03)') + ';border:1px solid ' + (_cr?'rgba(96,165,250,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
+    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_cr?'#4D8EFF':'rgba(96,165,250,0.25)') + ';background:' + (_cr?'#4D8EFF':'transparent') + '">' + (_cr?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'#4D8EFF':'rgba(255,255,255,0.4)') + ';letter-spacing:0.8px">CREATINE</span></div>'
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(96,165,250,0.08)':'rgba(96,165,250,0.03)') + ';border:1px solid ' + (_sl?'rgba(96,165,250,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
+    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_sl?'#4D8EFF':'rgba(96,165,250,0.25)') + ';background:' + (_sl?'#4D8EFF':'transparent') + '">' + (_sl?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'#4D8EFF':'rgba(255,255,255,0.4)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
+    if (td.sleepHours) h += '<span style="font-size:8px;color:rgba(255,255,255,0.3);margin-left:4px">' + td.sleepHours + 'h</span>'
+    h += '</div></div>'
+    // Mood row with Sync Whoop on right
+    h += '<div style="display:flex;gap:8px;margin-top:10px;align-items:center">'
+    h += '<div style="flex:1"><label class="lb">MOOD</label><div style="display:flex;gap:10px;padding:4px 0">'
+    MOOD_E.forEach(function(e, i) {
+      var sel = td.mood === i
+      var unset = td.mood === undefined || td.mood === null
+      h += '<span onclick="uf(\'mood\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
+    })
+    h += '</div></div>'
+    // Sync Whoop button spanning right side
+    h += '<button onclick="syncWhoop()" style="width:68px;height:68px;flex-shrink:0;background:rgba(123,63,160,0.1);border:1px solid rgba(123,63,160,0.25);border-radius:8px;color:#A97BDB;font-family:\'Space Grotesk\',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">' + (S.whoopSyncing ? '<span style="display:inline-block;width:14px;height:14px;border:1.5px solid rgba(123,63,160,0.2);border-top-color:#A97BDB;border-radius:50%;animation:spin 0.8s linear infinite"></span><span>SYNCING</span>' : '<span style="font-size:16px">\u{1F4F2}</span><span>SYNC</span><span>WHOOP</span>') + '</button>'
+    h += '</div>'
+    // Energy row
+    h += '<div style="margin-top:6px;margin-bottom:2px"><label class="lb">ENERGY</label><div style="display:flex;gap:10px;padding:4px 0">'
+    ENRG_E.forEach(function(e, i) {
+      var sel = td.energy === i
+      var unset = td.energy === undefined || td.energy === null
+      h += '<span onclick="uf(\'energy\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
+    })
     h += '</div></div>'
     h += '</div>'
 
     // MOBILITY — collapsible (default collapsed)
     if (!sn) {
-      var mobBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(0,0,0,0.3)') + '">' + mc + '/' + MOB.length + '</span>'
+      var mobBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (mc===MOB.length?'#BE9B50':'rgba(255,255,255,0.3)') + '">' + mc + '/' + MOB.length + '</span>'
       h += '<div class="card">' + colHdr('MOBILITY', 'colMob', mobBadge)
       if (!S.colMob) {
         h += '<div style="margin-top:10px">'
@@ -740,13 +738,13 @@ window.render = function render() {
         h += '<div style="margin-top:10px">'
         h += '<div class="chk" style="padding:11px 12px;background:' + (mt?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (mt?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px" onclick="event.stopPropagation();uf(\'muayThai\',' + (!mt) + ');render()">'
         h += '<div class="cb' + (mt?' dn':'') + '" style="width:17px;height:17px;border-radius:4px">' + (mt?'<span style="color:#fff;font-size:11px;font-weight:700">\u2713</span>':'') + '</div>'
-        h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(0,0,0,0.3);margin-top:1px">12\u20131 PM</span></div>'
+        h += '<div><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (mt?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:1px">\u{1F94A} MUAY THAI</span><span style="display:block;font-size:9px;color:rgba(255,255,255,0.3);margin-top:1px">12\u20131 PM</span></div>'
         h += '</div></div>'
       }
       h += '</div>'
 
       // CORE (MWF) — collapsible card
-      var coreBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(0,0,0,0.3)') + '">' + cc + '/' + COR.length + '</span>'
+      var coreBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (cc===COR.length?'#BE9B50':'rgba(255,255,255,0.3)') + '">' + cc + '/' + COR.length + '</span>'
       h += '<div class="card">' + colHdr('CORE', 'colCor', coreBadge)
       if (!S.colCor) {
         h += '<div style="margin-top:6px">'
@@ -762,7 +760,7 @@ window.render = function render() {
 
     // STRENGTH (TTS) — collapsible
     if (tt) {
-      var strBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(0,0,0,0.3)') + '">' + sc + '/' + STR.length + '</span>'
+      var strBadge = '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:600;color:' + (sc===STR.length?'#BE9B50':'rgba(255,255,255,0.3)') + '">' + sc + '/' + STR.length + '</span>'
       h += '<div class="card">' + colHdr('STRENGTH', 'colStr', strBadge)
       if (!S.colStr) {
         h += '<div style="margin-top:6px">'
@@ -773,15 +771,15 @@ window.render = function render() {
           h += chk('strength', e[0], e[1], e[2] + ' \u00B7 ' + e[3],
             '<button onclick="event.stopPropagation();S.oLog=S.oLog===\'' + e[0] + '\'?null:\'' + e[0] + '\';render()" style="background:rgba(190,155,80,0.06);border:1px solid rgba(190,155,80,0.12);border-radius:3px;color:rgba(190,155,80,0.5);font-size:7px;padding:3px 6px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-weight:600">LOG</button>')
           if (S.oLog === e[0]) {
-            h += '<div style="padding:8px 10px;background:rgba(0,0,0,0.01);border-top:1px solid rgba(0,0,0,0.03);margin-bottom:3px">'
+            h += '<div style="padding:8px 10px;background:rgba(255,255,255,0.01);border-top:1px solid rgba(255,255,255,0.03);margin-bottom:3px">'
             for (var si = 0; si < numSets; si++) {
               h += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">'
-              h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(0,0,0,0.35);width:32px;flex-shrink:0">SET ' + (si+1) + '</span>'
+              h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:rgba(255,255,255,0.35);width:32px;flex-shrink:0">SET ' + (si+1) + '</span>'
               h += '<div style="flex:1"><input type="text" value="' + (sets[si].w||'') + '" placeholder="' + e[3] + '" onchange="setSW(\'' + e[0] + '\',' + si + ',\'w\',this.value)"></div>'
               h += '<div style="flex:1"><input type="text" value="' + (sets[si].r||'') + '" placeholder="reps" onchange="setSW(\'' + e[0] + '\',' + si + ',\'r\',this.value)"></div>'
               h += '</div>'
             }
-            h += '<p style="font-size:9px;color:rgba(0,0,0,0.3);margin-top:3px;font-style:italic">' + e[4] + '</p>'
+            h += '<p style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:3px;font-style:italic">' + e[4] + '</p>'
             h += '</div>'
           }
         })
@@ -799,7 +797,7 @@ window.render = function render() {
       h += BATL
       h += '<p style="font-size:22px;font-weight:700;color:#A97BDB;margin-top:12px">Rest Day</p>'
       h += '<p style="font-size:13px;color:rgba(0,220,120,0.6);margin-bottom:6px;font-weight:500">The city sleeps. You recover.</p>'
-      h += '<p style="font-size:11px;color:rgba(0,0,0,0.25);margin-bottom:22px">1,800 cal</p>'
+      h += '<p style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:22px">1,800 cal</p>'
       h += '<button onclick="uf(\'restDay\',true);render()" style="padding:10px 28px;background:' + (td.restDay?'linear-gradient(135deg,#7B3FA0,#00C864)':'rgba(123,63,160,0.1)') + ';color:' + (td.restDay?'#fff':'#A97BDB') + ';border:1px solid rgba(123,63,160,0.25);border-radius:6px;cursor:pointer;font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px">' + (td.restDay?'\u2713 LOGGED':'LOG REST') + '</button>'
       h += '</div>'
     }
@@ -844,9 +842,9 @@ window.render = function render() {
       h += '<div class="card"><div class="sh">ALL REFLECTIONS</div>'
       Object.entries(S.data.days).filter(function(e) { return e[1].gratitude || e[1].timeSpent }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
         var dt = new Date(e[0]+'T12:00:00')
-        h += '<div style="padding:8px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);border-radius:6px;margin-bottom:5px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + '</span><span style="font-size:9px;color:rgba(0,0,0,0.3);margin-left:5px">' + e[0] + '</span>'
-        if (e[1].gratitude) h += '<p style="font-size:12px;color:rgba(0,0,0,0.6);margin-top:4px">' + e[1].gratitude + '</p>'
-        if (e[1].timeSpent) h += '<p style="font-size:11px;color:rgba(0,0,0,0.35);margin-top:2px">' + e[1].timeSpent + '</p>'
+        h += '<div style="padding:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;margin-bottom:5px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + '</span><span style="font-size:9px;color:rgba(255,255,255,0.3);margin-left:5px">' + e[0] + '</span>'
+        if (e[1].gratitude) h += '<p style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px">' + e[1].gratitude + '</p>'
+        if (e[1].timeSpent) h += '<p style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:2px">' + e[1].timeSpent + '</p>'
         h += '</div>'
       })
       h += '</div>'
@@ -863,13 +861,13 @@ window.render = function render() {
       h += '<div class="card"><div class="sh">JOURNAL</div>'
       Object.entries(S.data.days).filter(function(e) { return e[1].notes && e[1].notes.trim() }).sort(function(a,b) { return b[0].localeCompare(a[0]) }).forEach(function(e) {
         var dt = new Date(e[0]+'T12:00:00'), p = cp(e[0])
-        h += '<div style="padding:8px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.04);border-radius:6px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + ' <span style="color:rgba(0,0,0,0.25)">' + e[0] + '</span></span><span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:' + (p>=80?'#78C98E':'rgba(0,0,0,0.25)') + '">' + p + '%</span></div><p style="font-size:12px;color:rgba(0,0,0,0.6);line-height:1.5;white-space:pre-wrap;margin-top:4px">' + e[1].notes + '</p></div>'
+        h += '<div style="padding:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:6px;margin-bottom:5px"><div style="display:flex;justify-content:space-between"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;color:#BE9B50">' + DY[dt.getDay()] + ' <span style="color:rgba(255,255,255,0.25)">' + e[0] + '</span></span><span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;color:' + (p>=80?'#78C98E':'rgba(255,255,255,0.25)') + '">' + p + '%</span></div><p style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.5;white-space:pre-wrap;margin-top:4px">' + e[1].notes + '</p></div>'
       })
       h += '</div>'
     }
 
     // Footer
-    h += '<div style="text-align:center;padding:24px 16px 8px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.6);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:10px;color:rgba(0,0,0,0.25);margin-top:4px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
+    h += '<div style="text-align:center;padding:24px 16px 8px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.6);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:4px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -891,7 +889,7 @@ window.render = function render() {
       ZZ.forEach(function(m) {
         var k_ = m.toLowerCase().replace(/ /g,'_')
         var vl = (S.data.zozo[ky]||{})[k_]||''
-        h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><span style="font-size:11px;color:rgba(0,0,0,0.5);width:80px;flex-shrink:0">' + m + '</span><input type="number" step="0.1" value="' + vl + '" placeholder="\u2014" style="flex:1;padding:4px 6px;font-size:12px" onchange="if(!S.data.zozo[\'' + ky + '\'])S.data.zozo[\'' + ky + '\']={}; S.data.zozo[\'' + ky + '\'][\'' + k_ + '\']=this.value;sv()"></div>'
+        h += '<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><span style="font-size:11px;color:rgba(255,255,255,0.5);width:80px;flex-shrink:0">' + m + '</span><input type="number" step="0.1" value="' + vl + '" placeholder="\u2014" style="flex:1;padding:4px 6px;font-size:12px" onchange="if(!S.data.zozo[\'' + ky + '\'])S.data.zozo[\'' + ky + '\']={}; S.data.zozo[\'' + ky + '\'][\'' + k_ + '\']=this.value;sv()"></div>'
       })
       h += '</div>'
     }
@@ -905,7 +903,7 @@ window.render = function render() {
         h += '<div style="display:flex;flex-wrap:wrap;gap:3px">'
         ZZ.forEach(function(m) {
           var v = sc[m.toLowerCase().replace(/ /g,'_')]
-          if (v) h += '<span style="font-size:8px;color:rgba(0,0,0,0.5);background:rgba(0,0,0,0.04);padding:2px 4px;border-radius:2px">' + m + ':' + v + '"</span>'
+          if (v) h += '<span style="font-size:8px;color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.04);padding:2px 4px;border-radius:2px">' + m + ':' + v + '"</span>'
         })
         h += '</div></div>'
       })
@@ -922,13 +920,13 @@ window.render = function render() {
     h += '<button onclick="consultExpert()" style="width:100%;padding:13px;background:linear-gradient(135deg,rgba(190,155,80,0.1),rgba(190,155,80,0.06));border:1px solid rgba(190,155,80,0.25);border-radius:8px;color:#BE9B50;font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:12px">\u{1F9E0} CONSULT EXPERT</button>'
 
     h += '<div style="display:flex;gap:8px;margin-bottom:10px">'
-    h += '<div style="flex:1;background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:#BE9B50;line-height:1">' + stk + '</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(0,0,0,0.35);letter-spacing:2px;margin-top:6px">STREAK</p></div>'
-    h += '<div style="flex:1;background:#FFFFFF;border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.04)"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:' + (ad>=85?'#78C98E':'#D46461') + ';line-height:1">' + ad + '%</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(0,0,0,0.35);letter-spacing:2px;margin-top:6px">ADHERENCE</p></div>'
+    h += '<div style="flex:1;background:#363645;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:#BE9B50;line-height:1">' + stk + '</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">STREAK</p></div>'
+    h += '<div style="flex:1;background:#363645;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:' + (ad>=85?'#78C98E':'#D46461') + ';line-height:1">' + ad + '%</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">ADHERENCE</p></div>'
     h += '</div>'
 
     h += '<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="sh">TIMELINE</div><span style="font-size:9px;color:#BE9B50">' + dl + 'd</span></div>'
-    h += '<div style="height:4px;background:rgba(0,0,0,0.03);border-radius:2px;overflow:hidden"><div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#BE9B50,#78C98E);width:' + Math.min(wk/14*100,100) + '%"></div></div>'
-    h += '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:8px;color:rgba(0,0,0,0.3)">Apr 6</span><span style="font-size:8px;color:#BE9B50">Jul 14 \u{1F382}</span></div></div>'
+    h += '<div style="height:4px;background:rgba(255,255,255,0.03);border-radius:2px;overflow:hidden"><div style="height:100%;border-radius:2px;background:linear-gradient(90deg,#BE9B50,#78C98E);width:' + Math.min(wk/14*100,100) + '%"></div></div>'
+    h += '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:8px;color:rgba(255,255,255,0.3)">Apr 6</span><span style="font-size:8px;color:#BE9B50">Jul 14 \u{1F382}</span></div></div>'
 
     h += '<div class="card"><div class="sh">METRICS</div>'
     ;[
@@ -939,7 +937,7 @@ window.render = function render() {
       ['Sleep', gl('sleepScore'), '/100'],
       ['Strain', gl('whoopStrain'), '/21']
     ].forEach(function(x) {
-      h += '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,0,0,0.03)"><span style="font-size:11px;color:rgba(0,0,0,0.35)">' + x[0] + '</span><span style="font-size:11px;font-weight:500;color:rgba(0,0,0,0.75);font-family:\'Space Grotesk\',sans-serif">' + x[1] + (x[1]!=='\u2014'?' '+x[2]:'') + '</span></div>'
+      h += '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.03)"><span style="font-size:11px;color:rgba(255,255,255,0.35)">' + x[0] + '</span><span style="font-size:11px;font-weight:500;color:rgba(255,255,255,0.75);font-family:\'Space Grotesk\',sans-serif">' + x[1] + (x[1]!=='\u2014'?' '+x[2]:'') + '</span></div>'
     })
     h += '</div>'
 
@@ -948,10 +946,10 @@ window.render = function render() {
       var mn = Math.min.apply(null,ws)-1, mx = Math.max.apply(null,ws)+1, rn = mx-mn||1
       h += '<div class="card"><div class="sh">WEIGHT</div><div style="height:65px;display:flex;align-items:flex-end;gap:2px;margin-top:6px">'
       wt.forEach(function(e,i) { h += '<div style="flex:1;height:100%;display:flex;align-items:flex-end"><div style="width:100%;border-radius:2px 2px 0 0;background:' + (i===wt.length-1?'#BE9B50':'rgba(190,155,80,0.15)') + ';height:' + ((e.w-mn)/rn*100) + '%;min-height:2px"></div></div>' })
-      h += '</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:9px;color:rgba(0,0,0,0.35)">Start:' + wt[0].w + '</span><span style="font-size:9px;color:' + (wt[wt.length-1].w<wt[0].w?'#78C98E':'#D46461') + '">Now:' + wt[wt.length-1].w + ' (' + (wt[wt.length-1].w-wt[0].w>0?'+':'') + (wt[wt.length-1].w-wt[0].w).toFixed(1) + ')</span></div></div>'
+      h += '</div><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:9px;color:rgba(255,255,255,0.35)">Start:' + wt[0].w + '</span><span style="font-size:9px;color:' + (wt[wt.length-1].w<wt[0].w?'#78C98E':'#D46461') + '">Now:' + wt[wt.length-1].w + ' (' + (wt[wt.length-1].w-wt[0].w>0?'+':'') + (wt[wt.length-1].w-wt[0].w).toFixed(1) + ')</span></div></div>'
     }
 
-    h += '<div style="text-align:center;padding:20px 16px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.6);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:9px;color:rgba(0,0,0,0.25);margin-top:3px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
+    h += '<div style="text-align:center;padding:20px 16px"><div style="display:inline-flex;align-items:center;gap:6px">' + BATL_G + BATL + BATL_G + '</div><p style="font-family:\'Space Grotesk\',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;color:rgba(190,155,80,0.6);margin-top:8px">DO YOU WANT TO FIGHT?</p><p style="font-size:9px;color:rgba(255,255,255,0.25);margin-top:3px">Amateur Muay Thai \u00B7 Late 2026</p></div>'
   }
 
   h += '</div>'
