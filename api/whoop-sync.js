@@ -13,7 +13,7 @@ const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token'
 const WHOOP_API = 'https://api.prod.whoop.com/developer/v1'
 
 async function getValidToken() {
-  const readResp = await fetch(SB_URL + '?user_id=eq.default&select=*&limit=1', {
+  const readResp = await fetch(SB_URL + '?user_id=eq.default&select=*&limit=25', {
     headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
   })
   if (!readResp.ok) return null
@@ -54,6 +54,7 @@ export default async function handler(req, res) {
 
   const { date } = req.body || {}
   if (!date) return res.status(400).json({ error: 'Missing date' })
+  console.log('[whoop-sync] Received date:', date)
 
   try {
     const token = await getValidToken()
@@ -64,16 +65,16 @@ export default async function handler(req, res) {
 
     // Try v1 first, fall back to v2 for recovery and sleep
     const recUrls = [
-      BASE + '/v1/recovery?limit=1',
-      BASE + '/v1/cycle/recovery?limit=1',
-      BASE + '/v2/recovery?limit=1'
+      BASE + '/v1/recovery?limit=25',
+      BASE + '/v1/cycle/recovery?limit=25',
+      BASE + '/v2/recovery?limit=25'
     ]
     const slpUrls = [
-      BASE + '/v1/activity/sleep?limit=1',
-      BASE + '/v1/sleep?limit=1',
-      BASE + '/v2/activity/sleep?limit=1'
+      BASE + '/v1/activity/sleep?limit=25',
+      BASE + '/v1/sleep?limit=25',
+      BASE + '/v2/activity/sleep?limit=25'
     ]
-    const cycUrl = BASE + '/v1/cycle?limit=1'
+    const cycUrl = BASE + '/v1/cycle?limit=25'
 
     // Helper: try URLs in order, return first non-404
     async function tryUrls(urls) {
@@ -106,10 +107,28 @@ export default async function handler(req, res) {
 
     const result = {}
 
-    // Parse recovery
+    // Convert UTC timestamp to YYYY-MM-DD in EDT (UTC-4)
+    function toDateEDT(ts) {
+      const d = new Date(ts)
+      d.setMinutes(d.getMinutes() - 240)
+      return d.toISOString().split('T')[0]
+    }
+
+    // Find record matching requested date from an array
+    function findRecord(records, dateField) {
+      for (const r of records) {
+        if (r[dateField] && toDateEDT(r[dateField]) === date) return r
+      }
+      return null
+    }
+
+    // Parse recovery — match by created_at
     try {
       const recD = JSON.parse(recText)
-      const rec = (recD.records && recD.records[0]) || recD[0] || null
+      const records = recD.records || recD || []
+      const rec = findRecord(records, 'created_at') || findRecord(records, 'updated_at')
+      debug.recovery.requestedDate = date
+      debug.recovery.matchedDate = rec ? toDateEDT(rec.created_at || rec.updated_at) : null
       if (rec) {
         const score = rec.score || rec
         if (score.recovery_score != null) result.whoopRecovery = Math.round(score.recovery_score)
@@ -118,10 +137,13 @@ export default async function handler(req, res) {
       }
     } catch (e) { debug.recovery.parseError = e.message }
 
-    // Parse sleep
+    // Parse sleep — match by end date (sleep that ended on the requested day)
     try {
       const slpD = JSON.parse(slpText)
-      const slp = (slpD.records && slpD.records[0]) || slpD[0] || null
+      const records = slpD.records || slpD || []
+      const slp = findRecord(records, 'end') || findRecord(records, 'updated_at')
+      debug.sleep.requestedDate = date
+      debug.sleep.matchedDate = slp ? toDateEDT(slp.end || slp.updated_at) : null
       if (slp) {
         const score = slp.score || slp
         if (score.sleep_performance_percentage != null) result.sleepScore = Math.round(score.sleep_performance_percentage)
@@ -131,10 +153,13 @@ export default async function handler(req, res) {
       }
     } catch (e) { debug.sleep.parseError = e.message }
 
-    // Parse cycle (strain)
+    // Parse cycle — match by start date
     try {
       const cycD = JSON.parse(cycText)
-      const cyc = (cycD.records && cycD.records[0]) || cycD[0] || null
+      const records = cycD.records || cycD || []
+      const cyc = findRecord(records, 'start') || findRecord(records, 'created_at')
+      debug.cycle.requestedDate = date
+      debug.cycle.matchedDate = cyc ? toDateEDT(cyc.start || cyc.created_at) : null
       if (cyc) {
         const score = cyc.score || cyc
         if (score.strain != null) result.whoopStrain = +(+score.strain).toFixed(1)
