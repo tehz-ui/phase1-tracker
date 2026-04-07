@@ -171,6 +171,7 @@ window.sv = async function() {
 
 // ─── Whoop OAuth & Sync (via Vercel serverless functions) ────────────────────
 async function handleWhoopCallback() {
+  console.log('[Whoop] Checking callback — path:', window.location.pathname, 'search:', window.location.search)
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
   if (!code || !window.location.pathname.includes('whoop-callback')) return false
@@ -202,8 +203,13 @@ window.syncWhoop = async function() {
     var { data: tok, error: tokErr } = await sb.from('whoop_tokens').select('user_id').eq('user_id', 'default').single()
     console.log('[Whoop] Token check — stored:', !!tok, 'error:', tokErr)
     if (!tok) {
+      var authUrl = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       console.log('[Whoop] No token found, redirecting to OAuth...')
-      window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
+      console.log('[Whoop] Full auth URL:', authUrl)
+      console.log('[Whoop] client_id:', WHOOP_CLIENT_ID)
+      console.log('[Whoop] redirect_uri:', WHOOP_REDIRECT)
+      console.log('[Whoop] scopes:', WHOOP_SCOPES)
+      window.location.href = authUrl
       return
     }
     // Fetch data via serverless function (handles token refresh server-side)
