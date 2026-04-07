@@ -704,7 +704,8 @@ window.render = function render() {
     h += '<div class="g2">' + inp('weight','WEIGHT','170','lbs') + inp('calories','CAL',_calTarget,'cal',calClr(td.calories,_calTarget)) + '</div>'
     h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g',nutClr(td.protein,130,80)) + inp('steps','STEPS','8000','',nutClr(td.steps,8000,5000)) + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100',whoopClr(td.whoopRecovery,67,34)) + inp('sleepScore','SLEEP','0-100','/100',whoopClr(td.sleepScore,67,34)) + '</div>'
-    h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm',rhrClr(td.rhr)) + inp('hrv','HRV','50','ms',whoopClr(td.hrv,67,34)) + '</div>'
+    var _recClr = whoopClr(td.whoopRecovery,67,34)
+    h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm',_recClr) + inp('hrv','HRV','50','ms',_recClr) + '</div>'
     // Creatine + 7+ Hours Sleep checkboxes (blue text, subtle)
     var _cr = td.creatine
     var _sl = td.sleepOk
