@@ -60,28 +60,49 @@ export default async function handler(req, res) {
     if (!token) return res.status(401).json({ error: 'no_token' })
 
     const hd = { 'Authorization': 'Bearer ' + token }
+    const BASE = 'https://api.prod.whoop.com/developer'
 
-    const recUrl = WHOOP_API + '/recovery?limit=1&order=desc'
-    const slpUrl = WHOOP_API + '/activity/sleep?limit=1&order=desc'
-    const cycUrl = WHOOP_API + '/cycle?limit=1&order=desc'
+    // Try v1 first, fall back to v2 for recovery and sleep
+    const recUrls = [
+      BASE + '/v1/recovery?limit=1',
+      BASE + '/v1/cycle/recovery?limit=1',
+      BASE + '/v2/recovery?limit=1'
+    ]
+    const slpUrls = [
+      BASE + '/v1/activity/sleep?limit=1',
+      BASE + '/v1/sleep?limit=1',
+      BASE + '/v2/activity/sleep?limit=1'
+    ]
+    const cycUrl = BASE + '/v1/cycle?limit=1'
 
-    // Fetch all three endpoints in parallel
-    const [recR, slpR, cycR] = await Promise.all([
-      fetch(recUrl, { headers: hd }),
-      fetch(slpUrl, { headers: hd }),
+    // Helper: try URLs in order, return first non-404
+    async function tryUrls(urls) {
+      const attempts = []
+      for (const url of urls) {
+        const r = await fetch(url, { headers: hd })
+        const text = await r.text()
+        attempts.push({ url, status: r.status, body: text })
+        if (r.status !== 404) return { resp: r, text, attempts }
+      }
+      return { resp: null, text: '', attempts }
+    }
+
+    const [recResult, slpResult, cycR] = await Promise.all([
+      tryUrls(recUrls),
+      tryUrls(slpUrls),
       fetch(cycUrl, { headers: hd })
     ])
 
-    // Read raw responses
-    const recText = await recR.text()
-    const slpText = await slpR.text()
     const cycText = await cycR.text()
 
     const debug = {
-      recovery: { url: recUrl, status: recR.status, raw: recText },
-      sleep: { url: slpUrl, status: slpR.status, raw: slpText },
+      recovery: { attempts: recResult.attempts },
+      sleep: { attempts: slpResult.attempts },
       cycle: { url: cycUrl, status: cycR.status, raw: cycText }
     }
+
+    const recText = recResult.text
+    const slpText = slpResult.text
 
     const result = {}
 
