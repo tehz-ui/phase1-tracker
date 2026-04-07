@@ -708,9 +708,9 @@ window.render = function render() {
     })
     h += '</div></div>'
     h += '</div>'
-    // Sync Whoop button — centered in remaining space, spanning both rows
-    h += '<div style="flex:1;display:flex;align-items:stretch;justify-content:center">'
-    h += '<button onclick="syncWhoop()" style="width:86px;background:rgba(74,222,128,0.1);border:1px solid #4ADE80;border-radius:8px;color:#4ADE80;font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4">' + (S.whoopSyncing ? '<span style="display:inline-block;width:16px;height:16px;border:1.5px solid rgba(74,222,128,0.2);border-top-color:#4ADE80;border-radius:50%;animation:spin 0.8s linear infinite"></span>' : 'SYNC<br>WHOOP') + '</button>'
+    // Sync Whoop button — square, centered horizontally and vertically
+    h += '<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:6px">'
+    h += '<button onclick="syncWhoop()" style="width:72px;height:72px;background:rgba(74,222,128,0.1);border:1px solid #4ADE80;border-radius:8px;color:#4ADE80;font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4">' + (S.whoopSyncing ? '<span style="display:inline-block;width:16px;height:16px;border:1.5px solid rgba(74,222,128,0.2);border-top-color:#4ADE80;border-radius:50%;animation:spin 0.8s linear infinite"></span>' : 'SYNC<br>WHOOP') + '</button>'
     h += '</div>'
     h += '</div>'
     h += '</div>'
