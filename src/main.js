@@ -8,12 +8,9 @@ const sb = createClient(
 
 // ─── Whoop OAuth2 ────────────────────────────────────────────────────────────
 var WHOOP_CLIENT_ID = 'cd5c6b15-4076-4727-9679-7832ccedacca'
-var WHOOP_SECRET = import.meta.env.VITE_WHOOP_SECRET || ''
 var WHOOP_REDIRECT = 'https://phase1-tracker.vercel.app/whoop-callback'
 var WHOOP_SCOPES = 'read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement'
 var WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth'
-var WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token'
-var WHOOP_API = 'https://api.prod.whoop.com/developer/v1'
 
 // ─── Global state (window.* so inline event handlers can reach it) ────────────
 const S = window.S = {
@@ -172,26 +169,17 @@ window.sv = async function() {
   } catch(e) { console.warn('sync:', e) }
 }
 
-// ─── Whoop OAuth & Sync ──────────────────────────────────────────────────────
+// ─── Whoop OAuth & Sync (via Vercel serverless functions) ────────────────────
 async function handleWhoopCallback() {
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
   if (!code || !window.location.pathname.includes('whoop-callback')) return false
   try {
-    var resp = await fetch(WHOOP_TOKEN_URL, {
+    await fetch('/api/whoop-token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'grant_type=authorization_code&code=' + encodeURIComponent(code) + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&client_id=' + WHOOP_CLIENT_ID + '&client_secret=' + encodeURIComponent(WHOOP_SECRET)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code })
     })
-    if (resp.ok) {
-      var data = await resp.json()
-      await sb.from('whoop_tokens').upsert({
-        user_id: 'default',
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
-        expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString()
-      }, { onConflict: 'user_id' })
-    }
   } catch(e) { console.warn('Whoop callback error:', e) }
   window.history.replaceState({}, '', '/')
   return true
@@ -200,69 +188,39 @@ async function handleWhoopCallback() {
 window.syncWhoop = async function() {
   S.whoopSyncing = true; render()
   try {
-    var { data: tok } = await sb.from('whoop_tokens').select('*').eq('user_id', 'default').single()
+    // Check if we have tokens stored
+    var { data: tok } = await sb.from('whoop_tokens').select('user_id').eq('user_id', 'default').single()
     if (!tok) {
       window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       return
     }
-    // Refresh token if expired
-    if (new Date(tok.expires_at) <= new Date()) {
-      var rr = await fetch(WHOOP_TOKEN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(tok.refresh_token) + '&client_id=' + WHOOP_CLIENT_ID + '&client_secret=' + encodeURIComponent(WHOOP_SECRET)
-      })
-      if (!rr.ok) {
-        window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES)
-        return
-      }
-      var rd = await rr.json()
-      tok.access_token = rd.access_token
-      tok.refresh_token = rd.refresh_token
-      tok.expires_at = new Date(Date.now() + rd.expires_in * 1000).toISOString()
-      await sb.from('whoop_tokens').upsert({ user_id: 'default', access_token: tok.access_token, refresh_token: tok.refresh_token, expires_at: tok.expires_at }, { onConflict: 'user_id' })
+    // Fetch data via serverless function (handles token refresh server-side)
+    var resp = await fetch('/api/whoop-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: dk(S.cur) })
+    })
+    if (resp.status === 401) {
+      // Token invalid/expired and refresh failed — re-auth
+      window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES)
+      return
     }
-    // Fetch Whoop data
-    var hd = { 'Authorization': 'Bearer ' + tok.access_token }
-    var startISO = dk(S.cur) + 'T00:00:00.000Z'
-    var endISO = dk(S.cur) + 'T23:59:59.999Z'
-    var [recR, slpR, cycR] = await Promise.all([
-      fetch(WHOOP_API + '/recovery?start=' + startISO + '&end=' + endISO, { headers: hd }),
-      fetch(WHOOP_API + '/activity/sleep?start=' + startISO + '&end=' + endISO, { headers: hd }),
-      fetch(WHOOP_API + '/cycle?start=' + startISO + '&end=' + endISO, { headers: hd })
-    ])
-    var k = dk(S.cur)
-    if (!S.data.days[k]) S.data.days[k] = {}
-    if (recR.ok) {
-      var recD = await recR.json()
-      var rec = recD.records && recD.records[0]
-      if (rec && rec.score) {
-        S.data.days[k].whoopRecovery = Math.round(rec.score.recovery_score)
-        S.data.days[k].hrv = Math.round(rec.score.hrv_rmssd_milli)
-        S.data.days[k].rhr = Math.round(rec.score.resting_heart_rate)
+    if (resp.ok) {
+      var result = await resp.json()
+      var k = dk(S.cur)
+      if (!S.data.days[k]) S.data.days[k] = {}
+      if (result.whoopRecovery != null) S.data.days[k].whoopRecovery = result.whoopRecovery
+      if (result.hrv != null) S.data.days[k].hrv = result.hrv
+      if (result.rhr != null) S.data.days[k].rhr = result.rhr
+      if (result.sleepScore != null) S.data.days[k].sleepScore = result.sleepScore
+      if (result.sleepHours != null) {
+        S.data.days[k].sleepHours = result.sleepHours
+        if (result.sleepHours >= 7) S.data.days[k].sleepOk = true
       }
+      if (result.whoopStrain != null) S.data.days[k].whoopStrain = result.whoopStrain
+      if (result.steps != null) S.data.days[k].steps = result.steps
+      sv()
     }
-    if (slpR.ok) {
-      var slpD = await slpR.json()
-      var slp = slpD.records && slpD.records[0]
-      if (slp) {
-        if (slp.score) S.data.days[k].sleepScore = Math.round(slp.score.sleep_performance_percentage)
-        if (slp.end && slp.start) {
-          var sleepHrs = +((new Date(slp.end) - new Date(slp.start)) / 3600000).toFixed(1)
-          S.data.days[k].sleepHours = sleepHrs
-          if (sleepHrs >= 7) S.data.days[k].sleepOk = true
-        }
-      }
-    }
-    if (cycR.ok) {
-      var cycD = await cycR.json()
-      var cyc = cycD.records && cycD.records[0]
-      if (cyc && cyc.score) {
-        S.data.days[k].whoopStrain = +cyc.score.strain.toFixed(1)
-        if (cyc.score.step_count != null) S.data.days[k].steps = cyc.score.step_count
-      }
-    }
-    sv()
   } catch(e) { console.warn('Whoop sync error:', e) }
   S.whoopSyncing = false; render()
 }
