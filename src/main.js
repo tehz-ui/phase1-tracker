@@ -232,10 +232,11 @@ async function handleWhoopCallback() {
 window.syncWhoop = async function() {
   S.whoopSyncing = true; render()
   try {
-    // Check if we have tokens stored
-    var { data: tok, error: tokErr } = await sb.from('whoop_tokens').select('user_id').eq('user_id', 'default').single()
-    console.log('[Whoop] Token check — stored:', !!tok, 'error:', tokErr)
-    if (!tok) {
+    // Check if we have tokens stored (via serverless — same key as token save)
+    var checkResp = await fetch('/api/whoop-check')
+    var checkData = await checkResp.json()
+    console.log('[Whoop] Token check via /api/whoop-check:', checkData)
+    if (!checkData.hasToken) {
       var authUrl = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       console.log('[Whoop] No token found, redirecting to OAuth...')
       console.log('[Whoop] Full auth URL:', authUrl)

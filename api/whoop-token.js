@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     const data = await resp.json()
     const expires_at = new Date(Date.now() + data.expires_in * 1000).toISOString()
 
-    await sb.from('whoop_tokens').upsert({
+    const { error: upsertErr } = await sb.from('whoop_tokens').upsert({
       user_id: 'default',
       access_token: data.access_token,
       refresh_token: data.refresh_token,
@@ -54,7 +54,9 @@ export default async function handler(req, res) {
     return res.status(200).json({
       access_token: data.access_token,
       refresh_token: data.refresh_token,
-      expires_at
+      expires_at,
+      saved: !upsertErr,
+      saveError: upsertErr ? upsertErr.message : null
     })
   } catch (e) {
     return res.status(500).json({ error: e.message })
