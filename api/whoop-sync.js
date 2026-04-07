@@ -13,19 +13,14 @@ const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token'
 const WHOOP_API = 'https://api.prod.whoop.com/developer/v1'
 
 async function getValidToken() {
-  // Read token via direct REST
   const readResp = await fetch(SB_URL + '?user_id=eq.default&select=*&limit=1', {
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY
-    }
+    headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY }
   })
   if (!readResp.ok) return null
   const rows = await readResp.json()
   if (!rows.length) return null
   const tok = rows[0]
 
-  // Refresh if expired
   if (new Date(tok.expires_at) <= new Date()) {
     const rr = await fetch(WHOOP_TOKEN_URL, {
       method: 'POST',
@@ -39,8 +34,6 @@ async function getValidToken() {
     tok.access_token = rd.access_token
     tok.refresh_token = rd.refresh_token
     tok.expires_at = new Date(Date.now() + rd.expires_in * 1000).toISOString()
-
-    // Save refreshed token via direct REST
     await fetch(SB_URL + '?on_conflict=user_id', {
       method: 'POST',
       headers: SB_HEADERS,
@@ -69,46 +62,64 @@ export default async function handler(req, res) {
     const hd = { 'Authorization': 'Bearer ' + token }
     const startISO = date + 'T00:00:00.000Z'
     const endISO = date + 'T23:59:59.999Z'
+    const qs = '?start=' + encodeURIComponent(startISO) + '&end=' + encodeURIComponent(endISO)
 
+    // Fetch all three endpoints in parallel
     const [recR, slpR, cycR] = await Promise.all([
-      fetch(WHOOP_API + '/recovery?start=' + startISO + '&end=' + endISO, { headers: hd }),
-      fetch(WHOOP_API + '/activity/sleep?start=' + startISO + '&end=' + endISO, { headers: hd }),
-      fetch(WHOOP_API + '/cycle?start=' + startISO + '&end=' + endISO, { headers: hd })
+      fetch(WHOOP_API + '/recovery' + qs, { headers: hd }),
+      fetch(WHOOP_API + '/sleep' + qs, { headers: hd }),
+      fetch(WHOOP_API + '/cycle' + qs, { headers: hd })
     ])
+
+    // Read raw responses
+    const recText = await recR.text()
+    const slpText = await slpR.text()
+    const cycText = await cycR.text()
+
+    const debug = {
+      recovery: { status: recR.status, raw: recText },
+      sleep: { status: slpR.status, raw: slpText },
+      cycle: { status: cycR.status, raw: cycText }
+    }
 
     const result = {}
 
-    if (recR.ok) {
-      const recD = await recR.json()
-      const rec = recD.records && recD.records[0]
-      if (rec && rec.score) {
-        result.whoopRecovery = Math.round(rec.score.recovery_score)
-        result.hrv = Math.round(rec.score.hrv_rmssd_milli)
-        result.rhr = Math.round(rec.score.resting_heart_rate)
+    // Parse recovery
+    try {
+      const recD = JSON.parse(recText)
+      const rec = (recD.records && recD.records[0]) || recD[0] || null
+      if (rec) {
+        const score = rec.score || rec
+        if (score.recovery_score != null) result.whoopRecovery = Math.round(score.recovery_score)
+        if (score.hrv_rmssd_milli != null) result.hrv = Math.round(score.hrv_rmssd_milli)
+        if (score.resting_heart_rate != null) result.rhr = Math.round(score.resting_heart_rate)
       }
-    }
+    } catch (e) { debug.recovery.parseError = e.message }
 
-    if (slpR.ok) {
-      const slpD = await slpR.json()
-      const slp = slpD.records && slpD.records[0]
+    // Parse sleep
+    try {
+      const slpD = JSON.parse(slpText)
+      const slp = (slpD.records && slpD.records[0]) || slpD[0] || null
       if (slp) {
-        if (slp.score) result.sleepScore = Math.round(slp.score.sleep_performance_percentage)
+        const score = slp.score || slp
+        if (score.sleep_performance_percentage != null) result.sleepScore = Math.round(score.sleep_performance_percentage)
         if (slp.end && slp.start) {
           result.sleepHours = +((new Date(slp.end) - new Date(slp.start)) / 3600000).toFixed(1)
         }
       }
-    }
+    } catch (e) { debug.sleep.parseError = e.message }
 
-    if (cycR.ok) {
-      const cycD = await cycR.json()
-      const cyc = cycD.records && cycD.records[0]
-      if (cyc && cyc.score) {
-        result.whoopStrain = +cyc.score.strain.toFixed(1)
-        if (cyc.score.step_count != null) result.steps = cyc.score.step_count
+    // Parse cycle (strain)
+    try {
+      const cycD = JSON.parse(cycText)
+      const cyc = (cycD.records && cycD.records[0]) || cycD[0] || null
+      if (cyc) {
+        const score = cyc.score || cyc
+        if (score.strain != null) result.whoopStrain = +(+score.strain).toFixed(1)
       }
-    }
+    } catch (e) { debug.cycle.parseError = e.message }
 
-    return res.status(200).json(result)
+    return res.status(200).json({ data: result, debug })
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }

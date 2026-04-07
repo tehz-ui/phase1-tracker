@@ -230,6 +230,8 @@ async function handleWhoopCallback() {
 }
 
 window.syncWhoop = async function() {
+  // Guard against double-firing
+  if (S.whoopSyncing) { console.log('[Whoop] Sync already in progress, skipping'); return }
   S.whoopSyncing = true; render()
   try {
     // Check if we have tokens stored (via serverless — same key as token save)
@@ -258,8 +260,15 @@ window.syncWhoop = async function() {
       return
     }
     if (resp.ok) {
-      var result = JSON.parse(respText)
+      var body = JSON.parse(respText)
+      var result = body.data || body
+      var debug = body.debug || null
       console.log('[Whoop] Parsed data to write:', result)
+      if (debug) {
+        console.log('[Whoop] Raw recovery response:', debug.recovery)
+        console.log('[Whoop] Raw sleep response:', debug.sleep)
+        console.log('[Whoop] Raw cycle response:', debug.cycle)
+      }
       var k = dk(S.cur)
       if (!S.data.days[k]) S.data.days[k] = {}
       if (result.whoopRecovery != null) S.data.days[k].whoopRecovery = result.whoopRecovery
