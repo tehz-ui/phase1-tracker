@@ -173,6 +173,16 @@ window.sv = async function() {
 // This runs BEFORE the app boots. If we're on /whoop-callback, handle token
 // exchange and redirect to / before any render() happens.
 async function handleWhoopCallback() {
+  // Debug: capture callback URL immediately
+  if (window.location.pathname.includes('whoop-callback')) {
+    document.title = 'CALLBACK: ' + window.location.href
+    localStorage.setItem('whoop_debug_url', window.location.href)
+  }
+  // Debug: show /whoop-debug page
+  if (window.location.pathname.includes('whoop-debug')) {
+    document.getElementById('app').innerHTML = '<div style="padding:20px;color:#fff;font-family:monospace;font-size:13px;word-break:break-all"><p style="color:#BE9B50;margin-bottom:10px">WHOOP DEBUG</p><p style="margin-bottom:8px"><b>Last callback URL:</b></p><p>' + (localStorage.getItem('whoop_debug_url') || 'none') + '</p></div>'
+    return true
+  }
   var isCallback = window.location.pathname.includes('whoop-callback')
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
