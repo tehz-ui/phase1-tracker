@@ -60,14 +60,16 @@ export default async function handler(req, res) {
     if (!token) return res.status(401).json({ error: 'no_token' })
 
     const hd = { 'Authorization': 'Bearer ' + token }
-    const startISO = date + 'T00:00:00.000Z'
-    const qs = '?start=' + encodeURIComponent(startISO) + '&limit=1'
+
+    const recUrl = WHOOP_API + '/recovery?limit=1&order=desc'
+    const slpUrl = WHOOP_API + '/activity/sleep?limit=1&order=desc'
+    const cycUrl = WHOOP_API + '/cycle?limit=1&order=desc'
 
     // Fetch all three endpoints in parallel
     const [recR, slpR, cycR] = await Promise.all([
-      fetch(WHOOP_API + '/recovery' + qs, { headers: hd }),
-      fetch(WHOOP_API + '/activity/sleep' + qs, { headers: hd }),
-      fetch(WHOOP_API + '/cycle' + qs, { headers: hd })
+      fetch(recUrl, { headers: hd }),
+      fetch(slpUrl, { headers: hd }),
+      fetch(cycUrl, { headers: hd })
     ])
 
     // Read raw responses
@@ -76,9 +78,9 @@ export default async function handler(req, res) {
     const cycText = await cycR.text()
 
     const debug = {
-      recovery: { status: recR.status, raw: recText },
-      sleep: { status: slpR.status, raw: slpText },
-      cycle: { status: cycR.status, raw: cycText }
+      recovery: { url: recUrl, status: recR.status, raw: recText },
+      sleep: { url: slpUrl, status: slpR.status, raw: slpText },
+      cycle: { url: cycUrl, status: cycR.status, raw: cycText }
     }
 
     const result = {}
