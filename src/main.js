@@ -615,7 +615,7 @@ window.render = function render() {
     var curKey = dk(S.cur)
 
     h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center" onclick="S.showCal=false;render()">'
-    h += '<div style="background:#363645;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px;width:88%;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
+    h += '<div style="background:#424255;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:18px;width:88%;max-width:320px;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
     // Cal header
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
     h += '<button onclick="if(S.calMonth===0){S.calMonth=11;S.calYear--}else{S.calMonth--};render()" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:6px;color:rgba(255,255,255,0.5);font-size:16px;cursor:pointer;padding:4px 10px">\u2039</button>'
@@ -646,7 +646,7 @@ window.render = function render() {
   // ── Expert modal (fixed overlay) ────────────────────────────────────────────
   if (S.showExpert) {
     h += '<div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;padding:16px" onclick="S.showExpert=false;render()">'
-    h += '<div style="flex:1;overflow-y:auto;background:#363645;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
+    h += '<div style="flex:1;overflow-y:auto;background:#424255;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:16px;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.4)" onclick="event.stopPropagation()">'
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-shrink:0">'
     h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:700;color:#BE9B50;letter-spacing:2px">EXPERT ASSESSMENT</span>'
     h += '<button onclick="S.showExpert=false;render()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);font-size:11px;font-family:\'Space Grotesk\',sans-serif;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.5px">\u2715 CLOSE</button>'
@@ -676,38 +676,41 @@ window.render = function render() {
     h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g',nutClr(td.protein,130,80)) + inp('steps','STEPS','8000','',nutClr(td.steps,8000,5000)) + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100',whoopClr(td.whoopRecovery,67,34)) + inp('sleepScore','SLEEP','0-100','/100',whoopClr(td.sleepScore,67,34)) + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm',rhrClr(td.rhr)) + inp('hrv','HRV','50','ms',whoopClr(td.hrv,67,34)) + '</div>'
-    // Creatine + 7+ Hours Sleep checkboxes (blue style)
+    // Creatine + 7+ Hours Sleep checkboxes (subtle, integrated)
     var _cr = td.creatine
     var _sl = td.sleepOk
     h += '<div style="display:flex;gap:8px;margin-top:8px">'
-    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(96,165,250,0.08)':'rgba(96,165,250,0.03)') + ';border:1px solid ' + (_cr?'rgba(96,165,250,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
-    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_cr?'#4D8EFF':'rgba(96,165,250,0.25)') + ';background:' + (_cr?'#4D8EFF':'transparent') + '">' + (_cr?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
-    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'#4D8EFF':'rgba(255,255,255,0.4)') + ';letter-spacing:0.8px">CREATINE</span></div>'
-    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(96,165,250,0.08)':'rgba(96,165,250,0.03)') + ';border:1px solid ' + (_sl?'rgba(96,165,250,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
-    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_sl?'#4D8EFF':'rgba(96,165,250,0.25)') + ';background:' + (_sl?'#4D8EFF':'transparent') + '">' + (_sl?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
-    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'#4D8EFF':'rgba(255,255,255,0.4)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(255,255,255,0.04)':'transparent') + ';border:1px solid rgba(255,255,255,' + (_cr?'0.1':'0.06') + ');border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
+    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_cr?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.35)') + ';letter-spacing:0.8px">CREATINE</span></div>'
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(255,255,255,0.04)':'transparent') + ';border:1px solid rgba(255,255,255,' + (_sl?'0.1':'0.06') + ');border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
+    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_sl?'<span style="color:#2a2a35;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.35)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
     if (td.sleepHours) h += '<span style="font-size:8px;color:rgba(255,255,255,0.3);margin-left:4px">' + td.sleepHours + 'h</span>'
     h += '</div></div>'
-    // Mood row with Sync Whoop on right
-    h += '<div style="display:flex;gap:8px;margin-top:10px;align-items:center">'
-    h += '<div style="flex:1"><label class="lb">MOOD</label><div style="display:flex;gap:10px;padding:4px 0">'
+    // Mood + Energy rows with Sync Whoop button spanning right side
+    h += '<div style="display:flex;gap:10px;margin-top:10px;align-items:stretch">'
+    h += '<div style="flex:1">'
+    // Mood row
+    h += '<div><label class="lb">MOOD</label><div style="display:flex;gap:10px;padding:4px 0">'
     MOOD_E.forEach(function(e, i) {
       var sel = td.mood === i
       var unset = td.mood === undefined || td.mood === null
       h += '<span onclick="uf(\'mood\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
     })
     h += '</div></div>'
-    // Sync Whoop button spanning right side
-    h += '<button onclick="syncWhoop()" style="width:68px;height:68px;flex-shrink:0;background:rgba(123,63,160,0.1);border:1px solid rgba(123,63,160,0.25);border-radius:8px;color:#A97BDB;font-family:\'Space Grotesk\',sans-serif;font-size:8px;font-weight:700;letter-spacing:0.8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px">' + (S.whoopSyncing ? '<span style="display:inline-block;width:14px;height:14px;border:1.5px solid rgba(123,63,160,0.2);border-top-color:#A97BDB;border-radius:50%;animation:spin 0.8s linear infinite"></span><span>SYNCING</span>' : '<span style="font-size:16px">\u{1F4F2}</span><span>SYNC</span><span>WHOOP</span>') + '</button>'
-    h += '</div>'
     // Energy row
-    h += '<div style="margin-top:6px;margin-bottom:2px"><label class="lb">ENERGY</label><div style="display:flex;gap:10px;padding:4px 0">'
+    h += '<div style="margin-top:6px"><label class="lb">ENERGY</label><div style="display:flex;gap:10px;padding:4px 0">'
     ENRG_E.forEach(function(e, i) {
       var sel = td.energy === i
       var unset = td.energy === undefined || td.energy === null
       h += '<span onclick="uf(\'energy\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
     })
     h += '</div></div>'
+    h += '</div>'
+    // Sync Whoop button — tall, spanning both Mood + Energy rows
+    h += '<button onclick="syncWhoop()" style="width:82px;flex-shrink:0;background:rgba(123,63,160,0.1);border:1px solid rgba(123,63,160,0.25);border-radius:8px;color:#A97BDB;font-family:\'Space Grotesk\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.4">' + (S.whoopSyncing ? '<span style="display:inline-block;width:16px;height:16px;border:1.5px solid rgba(123,63,160,0.2);border-top-color:#A97BDB;border-radius:50%;animation:spin 0.8s linear infinite"></span>' : 'SYNC<br>WHOOP') + '</button>'
+    h += '</div>'
     h += '</div>'
 
     // MOBILITY — collapsible (default collapsed)
@@ -920,8 +923,8 @@ window.render = function render() {
     h += '<button onclick="consultExpert()" style="width:100%;padding:13px;background:linear-gradient(135deg,rgba(190,155,80,0.1),rgba(190,155,80,0.06));border:1px solid rgba(190,155,80,0.25);border-radius:8px;color:#BE9B50;font-family:\'Space Grotesk\',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;margin-bottom:12px">\u{1F9E0} CONSULT EXPERT</button>'
 
     h += '<div style="display:flex;gap:8px;margin-bottom:10px">'
-    h += '<div style="flex:1;background:#363645;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:#BE9B50;line-height:1">' + stk + '</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">STREAK</p></div>'
-    h += '<div style="flex:1;background:#363645;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:' + (ad>=85?'#78C98E':'#D46461') + ';line-height:1">' + ad + '%</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">ADHERENCE</p></div>'
+    h += '<div style="flex:1;background:#424255;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:#BE9B50;line-height:1">' + stk + '</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">STREAK</p></div>'
+    h += '<div style="flex:1;background:#424255;border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px 12px;text-align:center;box-shadow:none"><p style="font-family:\'Space Grotesk\',sans-serif;font-size:28px;font-weight:700;color:' + (ad>=85?'#78C98E':'#D46461') + ';line-height:1">' + ad + '%</p><p style="font-family:\'Space Grotesk\',sans-serif;font-size:7px;color:rgba(255,255,255,0.35);letter-spacing:2px;margin-top:6px">ADHERENCE</p></div>'
     h += '</div>'
 
     h += '<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="sh">TIMELINE</div><span style="font-size:9px;color:#BE9B50">' + dl + 'd</span></div>'
