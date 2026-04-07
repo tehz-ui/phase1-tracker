@@ -9,7 +9,7 @@ const sb = createClient(
 // ─── Whoop OAuth2 ────────────────────────────────────────────────────────────
 var WHOOP_CLIENT_ID = 'cd5c6b15-4076-4727-9679-7832ccedacca'
 var WHOOP_REDIRECT = 'https://phase1-tracker.vercel.app/whoop-callback'
-var WHOOP_SCOPES = 'read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement'
+var WHOOP_SCOPES = 'offline read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement'
 var WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth'
 
 // ─── Global state (window.* so inline event handlers can reach it) ────────────
@@ -238,12 +238,24 @@ window.syncWhoop = async function() {
     var checkResp = await fetch('/api/whoop-check')
     var checkData = await checkResp.json()
     console.log('[Whoop] Token check via /api/whoop-check:', checkData)
+    var authUrl = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=phase1-' + dk(S.cur)
     if (!checkData.hasToken) {
-      var authUrl = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       console.log('[Whoop] No token found, redirecting to OAuth...')
-      console.log('[Whoop] Full auth URL:', authUrl)
       window.location.href = authUrl
       return
+    }
+    // Token expired — try refresh before redirecting to OAuth
+    if (checkData.expired) {
+      console.log('[Whoop] Token expired, attempting refresh...')
+      var refreshResp = await fetch('/api/whoop-refresh', { method: 'POST' })
+      var refreshData = await refreshResp.json()
+      console.log('[Whoop] Refresh result:', refreshData)
+      if (!refreshData.refreshed) {
+        console.log('[Whoop] Refresh failed, redirecting to OAuth...')
+        window.location.href = authUrl
+        return
+      }
+      console.log('[Whoop] Token refreshed, proceeding with sync...')
     }
     // Fetch data via serverless function (handles token refresh server-side)
     console.log('[Whoop] Calling /api/whoop-sync for date:', dk(S.cur))
@@ -256,7 +268,7 @@ window.syncWhoop = async function() {
     console.log('[Whoop] Sync response:', resp.status, respText)
     if (resp.status === 401) {
       console.log('[Whoop] 401 — token invalid, redirecting to re-auth...')
-      window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES)
+      window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=phase1-' + dk(S.cur)
       return
     }
     if (resp.ok) {
