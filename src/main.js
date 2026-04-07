@@ -178,37 +178,54 @@ async function handleWhoopCallback() {
     document.title = 'CALLBACK: ' + window.location.href
     localStorage.setItem('whoop_debug_url', window.location.href)
   }
-  // Debug: show /whoop-debug page
+  // Debug: show /whoop-debug page with all debug info
   if (window.location.pathname.includes('whoop-debug')) {
-    document.getElementById('app').innerHTML = '<div style="padding:20px;color:#fff;font-family:monospace;font-size:13px;word-break:break-all"><p style="color:#BE9B50;margin-bottom:10px">WHOOP DEBUG</p><p style="margin-bottom:8px"><b>Last callback URL:</b></p><p>' + (localStorage.getItem('whoop_debug_url') || 'none') + '</p></div>'
+    document.getElementById('app').innerHTML = '<div style="padding:20px;color:#fff;font-family:monospace;font-size:12px;word-break:break-all;line-height:1.8">' +
+      '<p style="color:#BE9B50;font-size:14px;margin-bottom:12px">WHOOP DEBUG</p>' +
+      '<p><b>Last callback URL:</b><br>' + (localStorage.getItem('whoop_debug_url') || 'none') + '</p><br>' +
+      '<p><b>Token exchange response:</b><br>' + (localStorage.getItem('whoop_token_response') || 'none') + '</p></div>'
     return true
   }
+
   var isCallback = window.location.pathname.includes('whoop-callback')
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
-  console.log('[Whoop] Boot check — isCallback:', isCallback, 'hasCode:', !!code)
   if (!isCallback || !code) return false
 
-  // We ARE on the callback page — block everything, show a loading message
-  document.getElementById('app').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:rgba(255,255,255,0.5);font-family:Outfit,sans-serif;font-size:14px">Connecting Whoop...</div>'
+  // === CALLBACK DETECTED — STOP EVERYTHING ELSE ===
+  document.getElementById('app').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px"><div style="color:rgba(255,255,255,0.6);font-family:Outfit,sans-serif;font-size:14px">Connecting Whoop...</div><div style="color:rgba(255,255,255,0.3);font-family:monospace;font-size:10px">Exchanging authorization code</div></div>'
 
   console.log('[Whoop] Callback detected with code:', code.substring(0, 10) + '...')
-  console.log('[Whoop] Token exchange started')
+  localStorage.setItem('whoop_token_response', 'pending...')
+
+  // Exchange code for tokens — AWAIT fully before any redirect
+  var exchangeResult = ''
   try {
+    console.log('[Whoop] Token exchange started — calling /api/whoop-token')
     var tokenResp = await fetch('/api/whoop-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: code })
     })
-    var tokenData = await tokenResp.json()
-    console.log('[Whoop] Token exchange result:', tokenResp.status, tokenData)
+    var tokenText = await tokenResp.text()
+    exchangeResult = 'status=' + tokenResp.status + ' body=' + tokenText
+    console.log('[Whoop] Token exchange result:', exchangeResult)
+    localStorage.setItem('whoop_token_response', exchangeResult)
+
+    if (tokenResp.ok) {
+      console.log('[Whoop] Success — redirecting to main page')
+      window.location.replace('/?whoop=connected')
+    } else {
+      // Show error on screen
+      document.getElementById('app').innerHTML = '<div style="padding:20px;color:#fff;font-family:monospace;font-size:12px;word-break:break-all"><p style="color:#EF4444;margin-bottom:8px">Token exchange failed</p><p>' + exchangeResult + '</p><br><a href="/" style="color:#4D8EFF">Back to app</a></div>'
+    }
   } catch(e) {
+    exchangeResult = 'error: ' + e.message
     console.warn('[Whoop] Token exchange error:', e)
+    localStorage.setItem('whoop_token_response', exchangeResult)
+    document.getElementById('app').innerHTML = '<div style="padding:20px;color:#fff;font-family:monospace;font-size:12px;word-break:break-all"><p style="color:#EF4444;margin-bottom:8px">Token exchange error</p><p>' + exchangeResult + '</p><br><a href="/" style="color:#4D8EFF">Back to app</a></div>'
   }
 
-  // Redirect to main page with success flag (triggers auto-sync on boot)
-  console.log('[Whoop] Redirecting to main page')
-  window.location.replace('/?whoop=connected')
   return true
 }
 
