@@ -61,13 +61,12 @@ export default async function handler(req, res) {
 
     const hd = { 'Authorization': 'Bearer ' + token }
     const startISO = date + 'T00:00:00.000Z'
-    const endISO = date + 'T23:59:59.999Z'
-    const qs = '?start=' + encodeURIComponent(startISO) + '&end=' + encodeURIComponent(endISO)
+    const qs = '?start=' + encodeURIComponent(startISO) + '&limit=1'
 
     // Fetch all three endpoints in parallel
     const [recR, slpR, cycR] = await Promise.all([
       fetch(WHOOP_API + '/recovery' + qs, { headers: hd }),
-      fetch(WHOOP_API + '/sleep' + qs, { headers: hd }),
+      fetch(WHOOP_API + '/activity/sleep' + qs, { headers: hd }),
       fetch(WHOOP_API + '/cycle' + qs, { headers: hd })
     ])
 
