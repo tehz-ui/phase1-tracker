@@ -1,9 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
-
-const sb = createClient(
-  'https://rjvukihlwbdjdzguunsv.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || 'sb_publishable_TqFpcIrATpjISbazf38XpQ_1wLzwz_t'
-)
+const SB_URL = 'https://rjvukihlwbdjdzguunsv.supabase.co/rest/v1/whoop_tokens'
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const SB_HEADERS = {
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'resolution=merge-duplicates'
+}
 
 const WHOOP_CLIENT_ID = 'cd5c6b15-4076-4727-9679-7832ccedacca'
 const WHOOP_SECRET = process.env.WHOOP_SECRET || ''
@@ -44,19 +46,26 @@ export default async function handler(req, res) {
     const data = await resp.json()
     const expires_at = new Date(Date.now() + data.expires_in * 1000).toISOString()
 
-    const { error: upsertErr } = await sb.from('whoop_tokens').upsert({
-      user_id: 'default',
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      expires_at
-    }, { onConflict: 'user_id' })
+    // Upsert via direct REST API (bypasses schema cache)
+    const saveResp = await fetch(SB_URL + '?on_conflict=user_id', {
+      method: 'POST',
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        user_id: 'default',
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at
+      })
+    })
+    const saveText = await saveResp.text()
 
     return res.status(200).json({
       access_token: data.access_token,
       refresh_token: data.refresh_token,
       expires_at,
-      saved: !upsertErr,
-      saveError: upsertErr ? upsertErr.message : null
+      saved: saveResp.ok,
+      saveStatus: saveResp.status,
+      saveResponse: saveText || null
     })
   } catch (e) {
     return res.status(500).json({ error: e.message })

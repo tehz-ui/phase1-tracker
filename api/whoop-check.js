@@ -1,20 +1,40 @@
-import { createClient } from '@supabase/supabase-js'
-
-const sb = createClient(
-  'https://rjvukihlwbdjdzguunsv.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || 'sb_publishable_TqFpcIrATpjISbazf38XpQ_1wLzwz_t'
-)
+const SB_URL = 'https://rjvukihlwbdjdzguunsv.supabase.co/rest/v1/whoop_tokens'
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || ''
 
 export default async function handler(req, res) {
   try {
-    const { data, error } = await sb.from('whoop_tokens').select('user_id, expires_at').eq('user_id', 'default').single()
+    const readResp = await fetch(SB_URL + '?user_id=eq.default&select=user_id,expires_at&limit=1', {
+      headers: {
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY
+      }
+    })
+    const readText = await readResp.text()
+
+    if (!readResp.ok) {
+      return res.status(200).json({
+        hasToken: false,
+        error: 'Supabase REST error: ' + readResp.status + ' ' + readText
+      })
+    }
+
+    let rows
+    try { rows = JSON.parse(readText) } catch (e) {
+      return res.status(200).json({ hasToken: false, error: 'Invalid JSON: ' + readText })
+    }
+
+    if (!rows.length) {
+      return res.status(200).json({ hasToken: false, error: null })
+    }
+
+    const tok = rows[0]
     return res.status(200).json({
-      hasToken: !!data,
-      expires_at: data ? data.expires_at : null,
-      expired: data ? new Date(data.expires_at) <= new Date() : null,
-      error: error ? error.message : null
+      hasToken: true,
+      expires_at: tok.expires_at,
+      expired: new Date(tok.expires_at) <= new Date(),
+      error: null
     })
   } catch (e) {
-    return res.status(500).json({ error: e.message })
+    return res.status(500).json({ hasToken: false, error: e.message })
   }
 }

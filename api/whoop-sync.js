@@ -1,9 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
-
-const sb = createClient(
-  'https://rjvukihlwbdjdzguunsv.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || 'sb_publishable_TqFpcIrATpjISbazf38XpQ_1wLzwz_t'
-)
+const SB_URL = 'https://rjvukihlwbdjdzguunsv.supabase.co/rest/v1/whoop_tokens'
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY || ''
+const SB_HEADERS = {
+  'apikey': SB_KEY,
+  'Authorization': 'Bearer ' + SB_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'resolution=merge-duplicates'
+}
 
 const WHOOP_CLIENT_ID = 'cd5c6b15-4076-4727-9679-7832ccedacca'
 const WHOOP_SECRET = process.env.WHOOP_SECRET || ''
@@ -11,9 +13,19 @@ const WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token'
 const WHOOP_API = 'https://api.prod.whoop.com/developer/v1'
 
 async function getValidToken() {
-  const { data: tok } = await sb.from('whoop_tokens').select('*').eq('user_id', 'default').single()
-  if (!tok) return null
+  // Read token via direct REST
+  const readResp = await fetch(SB_URL + '?user_id=eq.default&select=*&limit=1', {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY
+    }
+  })
+  if (!readResp.ok) return null
+  const rows = await readResp.json()
+  if (!rows.length) return null
+  const tok = rows[0]
 
+  // Refresh if expired
   if (new Date(tok.expires_at) <= new Date()) {
     const rr = await fetch(WHOOP_TOKEN_URL, {
       method: 'POST',
@@ -27,12 +39,18 @@ async function getValidToken() {
     tok.access_token = rd.access_token
     tok.refresh_token = rd.refresh_token
     tok.expires_at = new Date(Date.now() + rd.expires_in * 1000).toISOString()
-    await sb.from('whoop_tokens').upsert({
-      user_id: 'default',
-      access_token: tok.access_token,
-      refresh_token: tok.refresh_token,
-      expires_at: tok.expires_at
-    }, { onConflict: 'user_id' })
+
+    // Save refreshed token via direct REST
+    await fetch(SB_URL + '?on_conflict=user_id', {
+      method: 'POST',
+      headers: SB_HEADERS,
+      body: JSON.stringify({
+        user_id: 'default',
+        access_token: tok.access_token,
+        refresh_token: tok.refresh_token,
+        expires_at: tok.expires_at
+      })
+    })
   }
 
   return tok.access_token
