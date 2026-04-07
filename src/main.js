@@ -206,9 +206,7 @@ window.syncWhoop = async function() {
       var authUrl = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       console.log('[Whoop] No token found, redirecting to OAuth...')
       console.log('[Whoop] Full auth URL:', authUrl)
-      console.log('[Whoop] client_id:', WHOOP_CLIENT_ID)
-      console.log('[Whoop] redirect_uri:', WHOOP_REDIRECT)
-      console.log('[Whoop] scopes:', WHOOP_SCOPES)
+      alert('Whoop OAuth URL:\n\n' + authUrl)
       window.location.href = authUrl
       return
     }
