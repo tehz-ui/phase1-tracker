@@ -6,6 +6,15 @@ const sb = createClient(
   'sb_publishable_TqFpcIrATpjISbazf38XpQ_1wLzwz_t'
 )
 
+// ─── Whoop OAuth2 ────────────────────────────────────────────────────────────
+var WHOOP_CLIENT_ID = 'cd5c6b15-4076-4727-9679-7832ccedacca'
+var WHOOP_SECRET = import.meta.env.VITE_WHOOP_SECRET || ''
+var WHOOP_REDIRECT = 'https://phase1-tracker.vercel.app/whoop-callback'
+var WHOOP_SCOPES = 'read:recovery read:cycles read:sleep read:workout read:profile read:body_measurement'
+var WHOOP_AUTH_URL = 'https://api.prod.whoop.com/oauth/oauth2/auth'
+var WHOOP_TOKEN_URL = 'https://api.prod.whoop.com/oauth/oauth2/token'
+var WHOOP_API = 'https://api.prod.whoop.com/developer/v1'
+
 // ─── Global state (window.* so inline event handlers can reach it) ────────────
 const S = window.S = {
   data: { days: {}, zozo: {} },
@@ -18,6 +27,7 @@ const S = window.S = {
   showExpert: false,
   expertLoading: false,
   expertResponse: '',
+  whoopSyncing: false,
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
   colMob: true,
@@ -162,6 +172,101 @@ window.sv = async function() {
   } catch(e) { console.warn('sync:', e) }
 }
 
+// ─── Whoop OAuth & Sync ──────────────────────────────────────────────────────
+async function handleWhoopCallback() {
+  var params = new URLSearchParams(window.location.search)
+  var code = params.get('code')
+  if (!code || !window.location.pathname.includes('whoop-callback')) return false
+  try {
+    var resp = await fetch(WHOOP_TOKEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'grant_type=authorization_code&code=' + encodeURIComponent(code) + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&client_id=' + WHOOP_CLIENT_ID + '&client_secret=' + encodeURIComponent(WHOOP_SECRET)
+    })
+    if (resp.ok) {
+      var data = await resp.json()
+      await sb.from('whoop_tokens').upsert({
+        user_id: 'default',
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: new Date(Date.now() + data.expires_in * 1000).toISOString()
+      }, { onConflict: 'user_id' })
+    }
+  } catch(e) { console.warn('Whoop callback error:', e) }
+  window.history.replaceState({}, '', '/')
+  return true
+}
+
+window.syncWhoop = async function() {
+  S.whoopSyncing = true; render()
+  try {
+    var { data: tok } = await sb.from('whoop_tokens').select('*').eq('user_id', 'default').single()
+    if (!tok) {
+      window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
+      return
+    }
+    // Refresh token if expired
+    if (new Date(tok.expires_at) <= new Date()) {
+      var rr = await fetch(WHOOP_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(tok.refresh_token) + '&client_id=' + WHOOP_CLIENT_ID + '&client_secret=' + encodeURIComponent(WHOOP_SECRET)
+      })
+      if (!rr.ok) {
+        window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES)
+        return
+      }
+      var rd = await rr.json()
+      tok.access_token = rd.access_token
+      tok.refresh_token = rd.refresh_token
+      tok.expires_at = new Date(Date.now() + rd.expires_in * 1000).toISOString()
+      await sb.from('whoop_tokens').upsert({ user_id: 'default', access_token: tok.access_token, refresh_token: tok.refresh_token, expires_at: tok.expires_at }, { onConflict: 'user_id' })
+    }
+    // Fetch Whoop data
+    var hd = { 'Authorization': 'Bearer ' + tok.access_token }
+    var startISO = dk(S.cur) + 'T00:00:00.000Z'
+    var endISO = dk(S.cur) + 'T23:59:59.999Z'
+    var [recR, slpR, cycR] = await Promise.all([
+      fetch(WHOOP_API + '/recovery?start=' + startISO + '&end=' + endISO, { headers: hd }),
+      fetch(WHOOP_API + '/activity/sleep?start=' + startISO + '&end=' + endISO, { headers: hd }),
+      fetch(WHOOP_API + '/cycle?start=' + startISO + '&end=' + endISO, { headers: hd })
+    ])
+    var k = dk(S.cur)
+    if (!S.data.days[k]) S.data.days[k] = {}
+    if (recR.ok) {
+      var recD = await recR.json()
+      var rec = recD.records && recD.records[0]
+      if (rec && rec.score) {
+        S.data.days[k].whoopRecovery = Math.round(rec.score.recovery_score)
+        S.data.days[k].hrv = Math.round(rec.score.hrv_rmssd_milli)
+        S.data.days[k].rhr = Math.round(rec.score.resting_heart_rate)
+      }
+    }
+    if (slpR.ok) {
+      var slpD = await slpR.json()
+      var slp = slpD.records && slpD.records[0]
+      if (slp) {
+        if (slp.score) S.data.days[k].sleepScore = Math.round(slp.score.sleep_performance_percentage)
+        if (slp.end && slp.start) {
+          var sleepHrs = +((new Date(slp.end) - new Date(slp.start)) / 3600000).toFixed(1)
+          S.data.days[k].sleepHours = sleepHrs
+          if (sleepHrs >= 7) S.data.days[k].sleepOk = true
+        }
+      }
+    }
+    if (cycR.ok) {
+      var cycD = await cycR.json()
+      var cyc = cycD.records && cycD.records[0]
+      if (cyc && cyc.score) {
+        S.data.days[k].whoopStrain = +cyc.score.strain.toFixed(1)
+        if (cyc.score.step_count != null) S.data.days[k].steps = cyc.score.step_count
+      }
+    }
+    sv()
+  } catch(e) { console.warn('Whoop sync error:', e) }
+  S.whoopSyncing = false; render()
+}
+
 async function ld() {
   var cached = localStorage.getItem('p1-cache')
   if (cached) { try { S.data = JSON.parse(cached) } catch(e) {} }
@@ -179,48 +284,55 @@ async function ld() {
 }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
-// Weighted scoring:
-// MWF: Muay Thai 35% (binary), Core 30% (8 ex), Mobility 20% (20 ex), Walk 15% (binary)
-// TTS: Strength 65% (6 ex), Mobility 20% (20 ex), Walk 15% (binary)
-// Sunday: restDay logged = 100%
-function cp(k) {
-  if (!S.data.days[k]) return 0
+// Weighted adherence with 5 priorities:
+// MWF: Training 35% (MT 20% + Core 10% + Mobility 5%), Sleep 20%, Protein 20%, Deficit 15% (<=2200), Creatine 10%
+// TTS: Training 35% (Strength 28% + Mobility 7%), Sleep 20%, Protein 20%, Deficit 15% (<=2100), Creatine 10%
+// Sunday: Sleep 30%, Protein 30%, Deficit 25% (<=1800), Creatine 15%
+function cpBreakdown(k) {
+  var r = { training: 0, trainingMax: 0, sleep: 0, sleepMax: 0, protein: 0, proteinMax: 0, deficit: 0, deficitMax: 0, creatine: 0, creatineMax: 0, total: 0 }
+  if (!S.data.days[k]) return r
   var d = S.data.days[k]
   var dt = new Date(k + 'T12:00:00')
   var w = dt.getDay()
-  if (w === 0) return d.restDay ? 100 : 0
 
-  var score = 0
+  var sleepMet = d.sleepOk || (d.sleepHours && +d.sleepHours >= 7)
+  var proteinMet = d.protein && +d.protein >= 130
+  var creatineMet = d.creatine
 
-  // Mobility: 20% split across 20 exercises
-  var m = d.mobility || {}
-  var mobDone = 0
-  for (var x in m) if (m[x]) mobDone++
-  score += (mobDone / MOB.length) * 20
-
-  // Walk: 15% binary
-  var walkDone = (d.walk && d.walk.done) ? 1 : 0
-  score += walkDone * 15
-
-  if (w === 1 || w === 3 || w === 5) {
-    // Muay Thai: 35% binary
-    if (d.muayThai) score += 35
-    // Core: 30% split across 8 exercises
-    var c = d.core || {}
-    var coreDone = 0
-    for (var x in c) if (c[x]) coreDone++
-    score += (coreDone / COR.length) * 30
+  if (w === 0) {
+    r.sleepMax = 30; r.proteinMax = 30; r.deficitMax = 25; r.creatineMax = 15
+    if (sleepMet) r.sleep = 30
+    if (proteinMet) r.protein = 30
+    if (d.calories && +d.calories <= 1800 && +d.calories > 0) r.deficit = 25
+    if (creatineMet) r.creatine = 15
+  } else if (w === 1 || w === 3 || w === 5) {
+    r.trainingMax = 35; r.sleepMax = 20; r.proteinMax = 20; r.deficitMax = 15; r.creatineMax = 10
+    if (d.muayThai) r.training += 20
+    var c = d.core || {}, cd2 = 0; for (var x in c) if (c[x]) cd2++
+    r.training += (cd2 / COR.length) * 10
+    var m = d.mobility || {}, md2 = 0; for (var x in m) if (m[x]) md2++
+    r.training += (md2 / MOB.length) * 5
+    if (sleepMet) r.sleep = 20
+    if (proteinMet) r.protein = 20
+    if (d.calories && +d.calories <= 2200 && +d.calories > 0) r.deficit = 15
+    if (creatineMet) r.creatine = 10
+  } else {
+    r.trainingMax = 35; r.sleepMax = 20; r.proteinMax = 20; r.deficitMax = 15; r.creatineMax = 10
+    var s = d.strength || {}, sd2 = 0; for (var x in s) if (s[x]) sd2++
+    r.training += (sd2 / STR.length) * 28
+    var m = d.mobility || {}, md2 = 0; for (var x in m) if (m[x]) md2++
+    r.training += (md2 / MOB.length) * 7
+    if (sleepMet) r.sleep = 20
+    if (proteinMet) r.protein = 20
+    if (d.calories && +d.calories <= 2100 && +d.calories > 0) r.deficit = 15
+    if (creatineMet) r.creatine = 10
   }
-  if (w === 2 || w === 4 || w === 6) {
-    // Strength: 65% split across 6 exercises
-    var s = d.strength || {}
-    var strDone = 0
-    for (var x in s) if (s[x]) strDone++
-    score += (strDone / STR.length) * 65
-  }
 
-  return Math.round(score)
+  r.training = Math.round(r.training * 10) / 10
+  r.total = Math.round(r.training + r.sleep + r.protein + r.deficit + r.creatine)
+  return r
 }
+function cp(k) { return cpBreakdown(k).total }
 
 function gs() {
   var s = 0, d = new Date(S.cur)
@@ -363,6 +475,9 @@ function formatExpertData() {
       }
     }
     if (day.walk && day.walk.done) lines.push('8K Steps: YES')
+    if (day.creatine) lines.push('Creatine: YES')
+    if (day.sleepOk) lines.push('7+ Hours Sleep: YES')
+    if (day.sleepHours) lines.push('Sleep Duration: ' + day.sleepHours + 'h')
     if (day.pullups) lines.push('Pull-ups total reps: ' + day.pullups)
     if (day.mood !== null && day.mood !== undefined) lines.push('Mood: ' + moodLabels[day.mood])
     if (day.energy !== null && day.energy !== undefined) lines.push('Energy: ' + energyLabels[day.energy])
@@ -443,7 +558,9 @@ window.render = function render() {
   // Logo + completion badge
   h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
   h += '<div style="display:flex;align-items:center;gap:6px">' + BAT + BAT_G + BAT + '</div>'
-  h += '<div style="background:' + (tp===100?'rgba(190,155,80,0.12)':'rgba(255,255,255,0.04)') + ';border:1px solid ' + (tp===100?'rgba(190,155,80,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (tp===100?'#BE9B50':'rgba(255,255,255,0.45)') + '">' + tp + '%</span></div>'
+  var _tpGreen = tp >= 80
+  var _goldStar = td.steps && +td.steps >= 8000
+  h += '<div style="background:' + (_tpGreen?'rgba(120,201,142,0.12)':'rgba(255,255,255,0.04)') + ';border:1px solid ' + (_tpGreen?'rgba(120,201,142,0.25)':'rgba(255,255,255,0.06)') + ';border-radius:14px;padding:3px 10px"><span style="font-family:\'Space Grotesk\',sans-serif;font-size:11px;font-weight:600;color:' + (_tpGreen?'#78C98E':'rgba(255,255,255,0.45)') + '">' + tp + '%</span>' + (_goldStar ? '<span style="margin-left:4px;font-size:12px">\u2B50</span>' : '') + '</div>'
   h += '</div>'
 
   // Quote — alternates by day of month (even = Ali, odd = Aristotle)
@@ -545,12 +662,34 @@ window.render = function render() {
   // ══════════════════════════════════════════════════════════════════════════
   if (S.tab === 'today') {
 
+    // ADHERENCE BREAKDOWN
+    var _bd = cpBreakdown(ky)
+    h += '<div class="card" style="padding:10px 12px">'
+    var _cats = []
+    if (_bd.trainingMax > 0) _cats.push(['TRAINING', _bd.training, _bd.trainingMax])
+    _cats.push(['SLEEP', _bd.sleep, _bd.sleepMax])
+    _cats.push(['PROTEIN', _bd.protein, _bd.proteinMax])
+    _cats.push(['DEFICIT', _bd.deficit, _bd.deficitMax])
+    _cats.push(['CREATINE', _bd.creatine, _bd.creatineMax])
+    _cats.forEach(function(c) {
+      var pct = c[2] > 0 ? (c[1] / c[2] * 100) : 0
+      var met = c[1] >= c[2] && c[2] > 0
+      h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
+      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;font-weight:600;color:rgba(255,255,255,0.25);letter-spacing:0.8px;width:58px;flex-shrink:0">' + c[0] + '</span>'
+      h += '<div style="flex:1;height:4px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden"><div style="height:100%;width:' + Math.round(pct) + '%;background:' + (met?'#78C98E':'rgba(190,155,80,0.4)') + ';border-radius:2px"></div></div>'
+      h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:8px;font-weight:600;color:' + (met?'#78C98E':'rgba(255,255,255,0.2)') + ';width:32px;text-align:right">' + Math.round(c[1]) + '/' + c[2] + '</span>'
+      h += '</div>'
+    })
+    h += '</div>'
+
     // DAILY LOG
     h += '<div class="card"><div class="sh">DAILY LOG</div>'
     h += '<div class="g2">' + inp('weight','WEIGHT','170','lbs') + inp('calories','CAL',mw?'2200':tt?'2100':'1800','cal') + '</div>'
     h += '<div class="g3" style="margin-top:6px">' + inp('protein','PROTEIN','140','g') + inp('steps','STEPS','8000','') + inp('whoopStrain','STRAIN','0-21','/21') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('whoopRecovery','RECOVERY','0-100','/100') + inp('sleepScore','SLEEP','0-100','/100') + '</div>'
     h += '<div class="g2" style="margin-top:6px">' + inp('rhr','RHR','60','bpm') + inp('hrv','HRV','50','ms') + '</div>'
+    // Sync Whoop button
+    h += '<button onclick="syncWhoop()" style="width:100%;margin-top:8px;padding:9px;background:rgba(57,255,20,0.04);border:1px solid rgba(57,255,20,0.15);border-radius:6px;color:rgba(57,255,20,0.6);font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;cursor:pointer">' + (S.whoopSyncing ? '<span style="display:inline-block;width:10px;height:10px;border:1.5px solid rgba(57,255,20,0.15);border-top-color:rgba(57,255,20,0.6);border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:6px"></span>SYNCING...' : '\u{1F4F2} SYNC WHOOP') + '</button>'
     // Mood selector — tapping selected emoji deselects it
     h += '<div style="margin-top:10px"><label class="lb">MOOD</label><div style="display:flex;gap:14px;padding:4px 2px">'
     MOOD_E.forEach(function(e, i) {
@@ -566,6 +705,20 @@ window.render = function render() {
       var unset = td.energy === undefined || td.energy === null
       h += '<span onclick="uf(\'energy\',' + (sel ? 'null' : i) + ');render()" style="font-size:24px;cursor:pointer;opacity:' + (unset ? '0.35' : sel ? '1' : '0.2') + ';transition:opacity 0.15s;filter:' + (sel ? 'none' : 'grayscale(0.3)') + '">' + e + '</span>'
     })
+    h += '</div></div>'
+    // Creatine checkbox
+    var _cr = td.creatine
+    h += '<div style="display:flex;gap:8px;margin-top:10px">'
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_cr?'rgba(190,155,80,0.06)':'rgba(190,155,80,0.02)') + ';border:1px solid ' + (_cr?'rgba(190,155,80,0.2)':'rgba(190,155,80,0.06)') + ';border-radius:6px" onclick="uf(\'creatine\',' + (!_cr) + ');render()">'
+    h += '<div class="cb' + (_cr?' dn':'') + '" style="width:15px;height:15px;border-radius:3px">' + (_cr?'<span style="color:#17171c;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_cr?'#BE9B50':'rgba(190,155,80,0.5)') + ';letter-spacing:0.8px">CREATINE</span></div>'
+    // 7+ Hours Sleep checkbox
+    var _sl = td.sleepOk
+    var _slAuto = td.sleepHours && +td.sleepHours >= 7
+    h += '<div class="chk" style="flex:1;padding:9px 10px;background:' + (_sl?'rgba(96,165,250,0.06)':'rgba(96,165,250,0.02)') + ';border:1px solid ' + (_sl?'rgba(96,165,250,0.2)':'rgba(96,165,250,0.06)') + ';border-radius:6px" onclick="uf(\'sleepOk\',' + (!_sl) + ');render()">'
+    h += '<div class="cb' + (_sl?' dn':'') + '" style="width:15px;height:15px;border-radius:3px;border-color:' + (_sl?'#60A5FA':'rgba(96,165,250,0.2)') + ';background:' + (_sl?'#60A5FA':'transparent') + '">' + (_sl?'<span style="color:#17171c;font-size:9px;font-weight:700">\u2713</span>':'') + '</div>'
+    h += '<span style="font-family:\'Space Grotesk\',sans-serif;font-size:10px;font-weight:600;color:' + (_sl?'#60A5FA':'rgba(96,165,250,0.5)') + ';letter-spacing:0.8px">7+ HRS SLEEP</span>'
+    if (td.sleepHours) h += '<span style="font-size:8px;color:rgba(255,255,255,0.2);margin-left:4px">' + td.sleepHours + 'h</span>'
     h += '</div></div>'
     h += '</div>'
 
@@ -816,4 +969,4 @@ window.render = function render() {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
-ld()
+handleWhoopCallback().then(function() { ld() })
