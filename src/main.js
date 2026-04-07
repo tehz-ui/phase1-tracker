@@ -170,12 +170,20 @@ window.sv = async function() {
 }
 
 // ─── Whoop OAuth & Sync (via Vercel serverless functions) ────────────────────
+// This runs BEFORE the app boots. If we're on /whoop-callback, handle token
+// exchange and redirect to / before any render() happens.
 async function handleWhoopCallback() {
-  console.log('[Whoop] Checking callback — path:', window.location.pathname, 'search:', window.location.search)
+  var isCallback = window.location.pathname.includes('whoop-callback')
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
-  if (!code || !window.location.pathname.includes('whoop-callback')) return false
-  console.log('[Whoop] OAuth callback — exchanging code:', code.substring(0, 10) + '...')
+  console.log('[Whoop] Boot check — isCallback:', isCallback, 'hasCode:', !!code)
+  if (!isCallback || !code) return false
+
+  // We ARE on the callback page — block everything, show a loading message
+  document.getElementById('app').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;color:rgba(255,255,255,0.5);font-family:Outfit,sans-serif;font-size:14px">Connecting Whoop...</div>'
+
+  console.log('[Whoop] Callback detected with code:', code.substring(0, 10) + '...')
+  console.log('[Whoop] Token exchange started')
   try {
     var tokenResp = await fetch('/api/whoop-token', {
       method: 'POST',
@@ -183,16 +191,14 @@ async function handleWhoopCallback() {
       body: JSON.stringify({ code: code })
     })
     var tokenData = await tokenResp.json()
-    console.log('[Whoop] Token exchange response:', tokenResp.status, tokenData)
-    if (tokenResp.ok) {
-      console.log('[Whoop] Token saved, now syncing data...')
-      window.history.replaceState({}, '', '/')
-      // Immediately sync data after successful OAuth
-      await window.syncWhoop()
-      return true
-    }
-  } catch(e) { console.warn('[Whoop] Callback error:', e) }
-  window.history.replaceState({}, '', '/')
+    console.log('[Whoop] Token exchange result:', tokenResp.status, tokenData)
+  } catch(e) {
+    console.warn('[Whoop] Token exchange error:', e)
+  }
+
+  // Redirect to main page with success flag (triggers auto-sync on boot)
+  console.log('[Whoop] Redirecting to main page')
+  window.location.replace('/?whoop=connected')
   return true
 }
 
@@ -259,6 +265,14 @@ async function ld() {
     localStorage.setItem('p1-cache', JSON.stringify(S.data))
     render()
   } catch(e) { console.warn('load:', e) }
+
+  // Auto-sync Whoop data if we just returned from OAuth
+  var urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('whoop') === 'connected') {
+    console.log('[Whoop] Just connected — auto-syncing data...')
+    window.history.replaceState({}, '', '/')
+    await window.syncWhoop()
+  }
 }
 
 // ─── Calculations ─────────────────────────────────────────────────────────────
@@ -940,4 +954,7 @@ window.render = function render() {
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
-handleWhoopCallback().then(function() { ld() })
+handleWhoopCallback().then(function(wasCallback) {
+  // If we handled a callback, we're redirecting — don't boot the app
+  if (!wasCallback) ld()
+})
