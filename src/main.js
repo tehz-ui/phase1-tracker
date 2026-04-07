@@ -174,13 +174,23 @@ async function handleWhoopCallback() {
   var params = new URLSearchParams(window.location.search)
   var code = params.get('code')
   if (!code || !window.location.pathname.includes('whoop-callback')) return false
+  console.log('[Whoop] OAuth callback — exchanging code:', code.substring(0, 10) + '...')
   try {
-    await fetch('/api/whoop-token', {
+    var tokenResp = await fetch('/api/whoop-token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: code })
     })
-  } catch(e) { console.warn('Whoop callback error:', e) }
+    var tokenData = await tokenResp.json()
+    console.log('[Whoop] Token exchange response:', tokenResp.status, tokenData)
+    if (tokenResp.ok) {
+      console.log('[Whoop] Token saved, now syncing data...')
+      window.history.replaceState({}, '', '/')
+      // Immediately sync data after successful OAuth
+      await window.syncWhoop()
+      return true
+    }
+  } catch(e) { console.warn('[Whoop] Callback error:', e) }
   window.history.replaceState({}, '', '/')
   return true
 }
@@ -189,24 +199,30 @@ window.syncWhoop = async function() {
   S.whoopSyncing = true; render()
   try {
     // Check if we have tokens stored
-    var { data: tok } = await sb.from('whoop_tokens').select('user_id').eq('user_id', 'default').single()
+    var { data: tok, error: tokErr } = await sb.from('whoop_tokens').select('user_id').eq('user_id', 'default').single()
+    console.log('[Whoop] Token check — stored:', !!tok, 'error:', tokErr)
     if (!tok) {
+      console.log('[Whoop] No token found, redirecting to OAuth...')
       window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES) + '&state=' + dk(S.cur)
       return
     }
     // Fetch data via serverless function (handles token refresh server-side)
+    console.log('[Whoop] Calling /api/whoop-sync for date:', dk(S.cur))
     var resp = await fetch('/api/whoop-sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date: dk(S.cur) })
     })
+    var respText = await resp.text()
+    console.log('[Whoop] Sync response:', resp.status, respText)
     if (resp.status === 401) {
-      // Token invalid/expired and refresh failed — re-auth
+      console.log('[Whoop] 401 — token invalid, redirecting to re-auth...')
       window.location.href = WHOOP_AUTH_URL + '?client_id=' + WHOOP_CLIENT_ID + '&redirect_uri=' + encodeURIComponent(WHOOP_REDIRECT) + '&response_type=code&scope=' + encodeURIComponent(WHOOP_SCOPES)
       return
     }
     if (resp.ok) {
-      var result = await resp.json()
+      var result = JSON.parse(respText)
+      console.log('[Whoop] Parsed data to write:', result)
       var k = dk(S.cur)
       if (!S.data.days[k]) S.data.days[k] = {}
       if (result.whoopRecovery != null) S.data.days[k].whoopRecovery = result.whoopRecovery
@@ -219,9 +235,10 @@ window.syncWhoop = async function() {
       }
       if (result.whoopStrain != null) S.data.days[k].whoopStrain = result.whoopStrain
       if (result.steps != null) S.data.days[k].steps = result.steps
+      console.log('[Whoop] Day data after write:', JSON.stringify(S.data.days[k]))
       sv()
     }
-  } catch(e) { console.warn('Whoop sync error:', e) }
+  } catch(e) { console.warn('[Whoop] Sync error:', e) }
   S.whoopSyncing = false; render()
 }
 
